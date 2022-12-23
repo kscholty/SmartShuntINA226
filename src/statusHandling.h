@@ -21,10 +21,11 @@ class BatteryStatus {
         //Getters
         float tTg() {return tTgVal;}
         float soc() {return socVal;}
-        bool isFull() { return fullReached;}
+        bool isFull() { return (fullReached != 0);}
 
         float voltage() {return lastVoltage;}
         float current() {return lastCurrent;}
+        float averageCurrent() {return getAverageCurrent();}
 
     protected:        
         void setBatterySoc(float val);

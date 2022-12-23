@@ -173,13 +173,14 @@ uint16_t getter(TRegister *reg, uint16_t) {
 }
 
 
-void modbusSetup()
+void modbusInit()
 {
   
   if (modbusServer)
   {
     delete modbusServer;
   }
+  
   modbusServer = new ModbusRTU;
   //Config Modbus IP
   modbusServer->server(gModbusId);
@@ -190,9 +191,10 @@ void modbusSetup()
   modbusServer->onGet(HREG(0), getter, REG_NUM_HOLDING_REGISTERS);
   modbusServer->onSet(HREG(0), setter, REG_NUM_HOLDING_REGISTERS);
   
+  modbusServer->begin(&Serial);
 }
 
-void modbusLoop(unsigned long)
+void modbusLoop()
 {
 
     // poll for Modbus requests

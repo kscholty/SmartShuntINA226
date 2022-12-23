@@ -7,19 +7,19 @@
 #include "statusHandling.h"
 
 
-INA226 ina(Wire);
-IRAM_ATTR volatile uint16_t alertCounter = 0;
-
-double sampleTime = 0;
-
 struct Shunt {
   float resistance;
   float maxCurrent;
 };
 
+
+volatile uint16_t alertCounter = 0;
+double sampleTime = 0;
+
 static Shunt PZEM017ShuntData[4] = {
     {0.00075, 100}, {0.0015, 50}, {0.000375, 200}, {0.000250, 300}};
 
+static INA226 ina(Wire);
 
 IRAM_ATTR void alert(void) { ++alertCounter; }
 
@@ -286,23 +286,26 @@ void updateAhCounter() {
 
     //float shuntVoltage = ina.readShuntVoltage();
     float current = ina.readShuntCurrent();
+    //Serial.printf("current is: %.2f\n",current);
     gBattery.updateConsumption(current,sampleTime,count);
 }
 
 void sensorLoop() {
     static unsigned long lastUpdate = 0;
     unsigned long now = millis();
-    while (alertCounter && ina.isConversionReady()) {    
-        updateAhCounter();
+    
+    while (alertCounter && ina.isConversionReady()) {      
+        updateAhCounter();        
     }
     
-    if(now-lastUpdate > 1000) {
-        gBattery.checkFull(ina.readBusVoltage());
-        gBattery.updateSOC();
+    if(now-lastUpdate > 1000) {        
+        gBattery.checkFull(ina.readBusVoltage());        
+        gBattery.updateSOC();        
         gBattery.updateTtG();
         lastUpdate = now;
     }
-  /*  Serial.print("Bus voltage:   ") ;
+/*
+     Serial.print("Bus voltage:   ") ;
     Serial.print(ina.readBusVoltage(), 7);
     Serial.println(" V");
 
@@ -319,5 +322,5 @@ void sensorLoop() {
     Serial.println(" A");
 
     Serial.println("");
-    */
+*/    
 }

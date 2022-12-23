@@ -13,7 +13,7 @@
 #include "common.h"
 #include "sensorHandling.h"
 #include "webHandling.h"
-
+#include "modbusHandling.h"
 
 
 void setup() {
@@ -21,7 +21,7 @@ void setup() {
 
     wifiSetup();
     sensorInit();
-  
+    modbusInit();
 }
 
 // Grab current value every time the alert flag is set.
@@ -40,6 +40,7 @@ void loop() {
  
  wifiLoop();
  sensorLoop();
+ modbusLoop();
   
 gParamsChanged = false;
 

@@ -1,5 +1,7 @@
 
 
+#define DEBUG_WIFI(m) Serial.print(m)
+
 #include <Arduino.h>
 #include <ArduinoOTA.h>
 
@@ -12,6 +14,7 @@
 #include <IotWebConf.h>
 #include <IotWebConfUsing.h> // This loads aliases for easier class names.
 #include "common.h"
+#include "statusHandling.h"
 
 // -- Initial password to connect to the Thing, when it creates an own Access Point.
 const char wifiInitialApPassword[] = "12345678";
@@ -30,6 +33,8 @@ const char wifiInitialApPassword[] = "12345678";
 
 // -- Method declarations.
 void handleRoot();
+void convertParams();
+
 // -- Callback methods.
 void configSaved();
 bool formValidator(iotwebconf::WebRequestWrapper*);
@@ -63,7 +68,7 @@ float gShuntResistancemV;
 char maxCurrentATxt[NUMBER_LEN] = "200";
 uint16_t gMaxCurrentA;
 
-char modbusIdx[NUMBER_LEN] = "1";
+char modbusIdTxt[NUMBER_LEN] = "1";
 uint16_t gModbusId;
 
 
@@ -71,7 +76,7 @@ IotWebConf iotWebConf(thingName, &dnsServer, &server, wifiInitialApPassword, CON
 
 IotWebConfParameterGroup sysConfGroup = IotWebConfParameterGroup("SysConf","Sensor");
 IotWebConfNumberParameter shuntResistance = IotWebConfNumberParameter("Shunt resistance [m&#8486;]", "shuntR", shuntResistancemVTxt, NUMBER_LEN, shuntResistancemVTxt);
-IotWebConfNumberParameter maxCurrent = IotWebConfNumberParameter("Expected max current [A]", "maxA", shuntResistancemVTxt, NUMBER_LEN, shuntResistancemVTxt);
+IotWebConfNumberParameter maxCurrent = IotWebConfNumberParameter("Expected max current [A]", "maxA", maxCurrentATxt, NUMBER_LEN, maxCurrentATxt);
 
 IotWebConfParameterGroup shuntGroup = IotWebConfParameterGroup("ShuntConf","Smart shunt");
 IotWebConfNumberParameter battCapacity = IotWebConfNumberParameter("Battery capacity [Ah]", "battAh", capacityAhTxt, NUMBER_LEN, capacityAhTxt);
@@ -84,7 +89,7 @@ IotWebConfNumberParameter fullVoltage = IotWebConfNumberParameter("Voltage when 
 IotWebConfNumberParameter fullDelay = IotWebConfNumberParameter("Delay before full [s]", "fullDelay", FullDelaySTxt, NUMBER_LEN, FullDelaySTxt);
 
 IotWebConfParameterGroup modbusGroup = IotWebConfParameterGroup("modbus","Modbus settings");
-IotWebConfNumberParameter modbusId = IotWebConfNumberParameter("Tail current [mA]", "tailC", tailCurrentmATxt, NUMBER_LEN, tailCurrentmATxt);
+IotWebConfNumberParameter modbusId = IotWebConfNumberParameter("MOdbus Id", "mbid", modbusIdTxt, NUMBER_LEN, modbusIdTxt);
 
 
 
@@ -110,8 +115,6 @@ void wifiSetup()
   
   modbusGroup.addItem(&modbusId);
   
-
-
   iotWebConf.setStatusPin(STATUS_PIN);
   iotWebConf.setConfigPin(CONFIG_PIN);
 
@@ -130,6 +133,14 @@ void wifiSetup()
   // -- Initializing the configuration.
   iotWebConf.init();
   
+  Serial.println("Converting params");
+  convertParams();
+  Serial.println("Values are:");
+  Serial.printf("Resistance: %.2f\n",gShuntResistancemV);
+  Serial.printf("Capacity %df\n",gCapacityAh);
+  Serial.printf("MOdbus ID %df\n",gModbusId);
+  
+
   // -- Set up required URL handlers on the web server.
   server.on("/", handleRoot);
   server.on("/config", [] { iotWebConf.handleConfig(); });
@@ -164,11 +175,30 @@ void handleRoot()
   }
 
   String s = "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/>";
+
   s += "<title>INR based smart shunt</title></head><body>";
-  s += "<br><br><b>Values</b> <ul>";
-  s += "<li>A Value: ";
+  
+  s += "<br><br><b>Config Values</b> <ul>";
+  s += "<li>Shunt resistance  : "+String(gShuntResistancemV);
+  s += "<li>Shunt max current : "+String(gMaxCurrentA);
+  s += "<li>Batt capacity     : "+String(gCapacityAh);
+  s += "<li>Batt efficiency   : "+String(gChargeEfficiencyPercent);
+  s += "<li>Min soc           : "+String(gMinPercent);
+  s += "<li>Tail current      : "+String(gTailCurrentmA);
+  s += "<li>Batt full voltage : "+String(gFullVoltagemV);
+  s += "<li>Batt full delay   : "+String(gFullDelayS);
+  s += "<li>Modbus ID         : "+String(gModbusId);
+  s += "</ul><hr><br>";
+  
+  s += "<br><br><b>Dynamic Values</b> <ul>";
+  s += "<li>Battery Voltage: "+String(gBattery.voltage());
+  s += "<li>Shunt current  : "+String(gBattery.current());
+  s += "<li>Avg current    : "+String(gBattery.averageCurrent());
+  s += "<li>Battery soc    : "+String(gBattery.soc());
+  s += "<li>Time to go     : "+String(gBattery.tTg());
+  s += "<li>Battery full   : "+String(gBattery.isFull());
   s += "</ul>";
-  s += "Go to <a href='config'>configure page</a> to change values.";
+  s += "Go to <a href='config'>configure page</a> to change configuration.";
   s += "</body></html>\n";
 
   server.send(200, "text/html", s);

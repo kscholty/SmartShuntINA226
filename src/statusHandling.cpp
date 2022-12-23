@@ -1,3 +1,4 @@
+#include "common.h"
 #include "statusHandling.h"
 
 
@@ -13,7 +14,7 @@ BatteryStatus::BatteryStatus() {
     tTgVal = 0;
     glidingAverageConsumption = 0;
      
-    setParameters(0,0,0,0,0,0);
+    setParameters(gCapacityAh,gChargeEfficiencyPercent,gMinPercent,gTailCurrentmA,gFullVoltagemV,gFullDelayS);
 }
 
 void BatteryStatus::setParameters(uint16_t capacityAh, uint16_t chargeEfficiencyPercent, uint16_t minPercent, uint16_t tailCurrentmA, uint16_t fullVoltagemV,uint16_t fullDelayS) 
@@ -46,7 +47,7 @@ void BatteryStatus::updateSOC() {
 
 void BatteryStatus::updateTtG() {
     uint16_t count = consumptionValues.size();
-    if (glidingAverageConsumption >= 0 && count != 0) {
+    if (glidingAverageConsumption > 0 && count != 0) {
          tTgVal = max(remainAs - minAs, 0.0f) / (glidingAverageConsumption / count);
     }  else {
         tTgVal = INFINITY;
@@ -96,6 +97,8 @@ float BatteryStatus::getAverageCurrent() {
 }
 
 bool BatteryStatus::checkFull(float currVoltage) {    
+    Serial.printf("VOltage is: %.2f\n",currVoltage);
+    lastVoltage = currVoltage;
     if (currVoltage >= fullVoltage) {
         unsigned long now = millis();
         if(fullReached == 0) {
@@ -113,7 +116,6 @@ bool BatteryStatus::checkFull(float currVoltage) {
     } else {
         fullReached = 0;
     }
-    lastVoltage = currVoltage;
     return false;
 }
         
