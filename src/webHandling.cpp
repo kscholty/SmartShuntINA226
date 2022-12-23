@@ -63,6 +63,8 @@ float gShuntResistancemV;
 char maxCurrentATxt[NUMBER_LEN] = "200";
 uint16_t gMaxCurrentA;
 
+char modbusIdx[NUMBER_LEN] = "1";
+uint16_t gModbusId;
 
 
 IotWebConf iotWebConf(thingName, &dnsServer, &server, wifiInitialApPassword, CONFIG_VERSION);
@@ -81,6 +83,8 @@ IotWebConfNumberParameter tailCurrent = IotWebConfNumberParameter("Tail current 
 IotWebConfNumberParameter fullVoltage = IotWebConfNumberParameter("Voltage when full [mV]", "fullV", fullVoltagemVTxt, NUMBER_LEN, fullVoltagemVTxt);
 IotWebConfNumberParameter fullDelay = IotWebConfNumberParameter("Delay before full [s]", "fullDelay", FullDelaySTxt, NUMBER_LEN, FullDelaySTxt);
 
+IotWebConfParameterGroup modbusGroup = IotWebConfParameterGroup("modbus","Modbus settings");
+IotWebConfNumberParameter modbusId = IotWebConfNumberParameter("Tail current [mA]", "tailC", tailCurrentmATxt, NUMBER_LEN, tailCurrentmATxt);
 
 
 
@@ -103,6 +107,10 @@ void wifiSetup()
   fullGroup.addItem(&fullVoltage);
   fullGroup.addItem(&tailCurrent);
   fullGroup.addItem(&fullDelay);
+  
+  modbusGroup.addItem(&modbusId);
+  
+
 
   iotWebConf.setStatusPin(STATUS_PIN);
   iotWebConf.setConfigPin(CONFIG_PIN);
@@ -110,6 +118,7 @@ void wifiSetup()
   iotWebConf.addParameterGroup(&sysConfGroup);
   iotWebConf.addParameterGroup(&shuntGroup);
   iotWebConf.addParameterGroup(&fullGroup);
+  iotWebConf.addParameterGroup(&modbusGroup);
 
   iotWebConf.setConfigSavedCallback(&configSaved);
   iotWebConf.setWifiConnectionCallback(&wifiConnected);
@@ -157,7 +166,7 @@ void handleRoot()
   String s = "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/>";
   s += "<title>INR based smart shunt</title></head><body>";
   s += "<br><br><b>Values</b> <ul>";
-  s += "<li>A Valkue: ";
+  s += "<li>A Value: ";
   s += "</ul>";
   s += "Go to <a href='config'>configure page</a> to change values.";
   s += "</body></html>\n";
@@ -175,6 +184,7 @@ void convertParams() {
     gTailCurrentmA = server.arg(tailCurrent.getId()).toInt();
     gFullVoltagemV = server.arg(fullVoltage.getId()).toInt();
     gFullDelayS = server.arg(fullDelay.getId()).toInt();
+    gModbusId = server.arg(modbusId.getId()).toInt();
 }
 
 void configSaved()
@@ -193,15 +203,6 @@ bool formValidator(iotwebconf::WebRequestWrapper* webRequestWrapper)
 
   int l = 0;
 
-#if 0
-
-
-
-IotWebConfNumberParameter tailCurrent = IotWebConfNumberParameter("Tail current [mA]", "tailC", tailCurrentmATxt, NUMBER_LEN, tailCurrentmATxt);
-IotWebConfNumberParameter fullVoltage = IotWebConfNumberParameter("Voltage when full [mV]", "fullV", fullVoltagemVTxt, NUMBER_LEN, fullVoltagemVTxt);
-IotWebConfNumberParameter fullDelay = Io
-#endif
-  
   
     if (server.arg(shuntResistance.getId()).toFloat() <=0)
     {

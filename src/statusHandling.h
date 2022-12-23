@@ -18,9 +18,13 @@ class BatteryStatus {
         bool checkFull(float currVoltage);
         void updateConsumption(float current,float period, uint16_t numPeriods);
 
+        //Getters
         float tTg() {return tTgVal;}
         float soc() {return socVal;}
         bool isFull() { return fullReached;}
+
+        float voltage() {return lastVoltage;}
+        float current() {return lastCurrent;}
 
     protected:        
         void setBatterySoc(float val);
@@ -33,6 +37,7 @@ class BatteryStatus {
         float minAs; // Amount of As that are in the battery when we assume it to be empty
         unsigned long fullDelay; // For how long do we need Full Voltage and current < tailCurrent to assume battery is full
 
+        float lastVoltage;
         float lastCurrent;        
         unsigned long fullReached;
         float socVal;
@@ -42,3 +47,5 @@ class BatteryStatus {
         float glidingAverageConsumption;
         float lastSoc;
 };
+
+extern BatteryStatus gBattery;

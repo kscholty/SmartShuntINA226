@@ -1,6 +1,9 @@
 #include "statusHandling.h"
 
 
+BatteryStatus gBattery;
+
+
 BatteryStatus::BatteryStatus() {
     lastCurrent = 0;
     fullReached = 0;
@@ -110,6 +113,7 @@ bool BatteryStatus::checkFull(float currVoltage) {
     } else {
         fullReached = 0;
     }
+    lastVoltage = currVoltage;
     return false;
 }
         
@@ -119,3 +123,6 @@ void BatteryStatus::setBatterySoc(float val) {
     remainAs = batteryCapacity * val;
     updateTtG();
 }
+
+
+

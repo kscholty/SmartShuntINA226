@@ -3,7 +3,7 @@
 
 void sensorInit();
 void sensorLoop();
-
+void setShunt(uint16_t id);
 
 extern float shuntResistance;
 extern float maxExpectedCurrent;

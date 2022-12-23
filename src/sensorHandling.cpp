@@ -21,8 +21,6 @@ static Shunt PZEM017ShuntData[4] = {
     {0.00075, 100}, {0.0015, 50}, {0.000375, 200}, {0.000250, 300}};
 
 
-static BatteryStatus battery;
-
 IRAM_ATTR void alert(void) { ++alertCounter; }
 
 uint16_t translateConversionTime(ina226_shuntConvTime_t time) {
@@ -230,6 +228,13 @@ void checkConfig() {
     Serial.println(" W");
 }
 
+void setShunt(uint16_t id) {
+    if(id < sizeof(PZEM017ShuntData)/ sizeof(Shunt)) {
+        ina.calibrate(PZEM017ShuntData[id].resistance,PZEM017ShuntData[id].maxCurrent);
+    }
+    
+}
+
 void sensorInit() {
     Wire.begin();
 
@@ -281,7 +286,7 @@ void updateAhCounter() {
 
     //float shuntVoltage = ina.readShuntVoltage();
     float current = ina.readShuntCurrent();
-    battery.updateConsumption(current,sampleTime,count);
+    gBattery.updateConsumption(current,sampleTime,count);
 }
 
 void sensorLoop() {
@@ -292,9 +297,9 @@ void sensorLoop() {
     }
     
     if(now-lastUpdate > 1000) {
-        battery.checkFull(ina.readBusVoltage());
-        battery.updateSOC();
-        battery.updateTtG();
+        gBattery.checkFull(ina.readBusVoltage());
+        gBattery.updateSOC();
+        gBattery.updateTtG();
         lastUpdate = now;
     }
   /*  Serial.print("Bus voltage:   ") ;
