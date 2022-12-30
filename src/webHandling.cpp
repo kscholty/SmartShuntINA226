@@ -13,6 +13,8 @@
 
 #include <IotWebConf.h>
 #include <IotWebConfUsing.h> // This loads aliases for easier class names.
+#include <IotWebConfTParameter.h>
+
 #include "common.h"
 #include "statusHandling.h"
 
@@ -44,55 +46,120 @@ WebServer server(80);
 
 bool gParamsChanged = true;
 
-char capacityAhTxt[NUMBER_LEN] = "100";
 uint16_t gCapacityAh;
 
-char chargeEfficiencyPercentTxt[NUMBER_LEN] = "95";
 uint16_t gChargeEfficiencyPercent;
 
-char minPercentTxt[NUMBER_LEN] = "10";
 uint16_t gMinPercent;
 
-char tailCurrentmATxt[NUMBER_LEN] = "2000";
 uint16_t gTailCurrentmA;
 
-char fullVoltagemVTxt[NUMBER_LEN] = "55200";
 uint16_t gFullVoltagemV;
 
-char FullDelaySTxt[NUMBER_LEN] = "30";
 uint16_t gFullDelayS;
 
-char shuntResistancemVTxt[NUMBER_LEN] = "0.75";
 float gShuntResistancemV;
 
-char maxCurrentATxt[NUMBER_LEN] = "200";
 uint16_t gMaxCurrentA;
 
-char modbusIdTxt[NUMBER_LEN] = "1";
 uint16_t gModbusId;
 
 
+// -- We can add a legend to the separator
 IotWebConf iotWebConf(thingName, &dnsServer, &server, wifiInitialApPassword, CONFIG_VERSION);
 
 IotWebConfParameterGroup sysConfGroup = IotWebConfParameterGroup("SysConf","Sensor");
-IotWebConfNumberParameter shuntResistance = IotWebConfNumberParameter("Shunt resistance [m&#8486;]", "shuntR", shuntResistancemVTxt, NUMBER_LEN, shuntResistancemVTxt);
-IotWebConfNumberParameter maxCurrent = IotWebConfNumberParameter("Expected max current [A]", "maxA", maxCurrentATxt, NUMBER_LEN, maxCurrentATxt);
+
+iotwebconf::FloatTParameter shuntResistance =
+   iotwebconf::Builder<iotwebconf::FloatTParameter>("shuntR").
+   label("Shunt resistance [m&#8486;]").
+   defaultValue(0.75).
+   step(0.01).
+   placeholder("e.g. 0.75").
+   build();
+
+iotwebconf::IntTParameter<uint16_t> maxCurrent =
+  iotwebconf::Builder<iotwebconf::IntTParameter<uint16_t>>("maxA").
+  label("Expected max current [A]").
+  defaultValue(200).
+  min(1).
+  step(1).
+  placeholder("1..65535").
+  build();
+
 
 IotWebConfParameterGroup shuntGroup = IotWebConfParameterGroup("ShuntConf","Smart shunt");
-IotWebConfNumberParameter battCapacity = IotWebConfNumberParameter("Battery capacity [Ah]", "battAh", capacityAhTxt, NUMBER_LEN, capacityAhTxt);
-IotWebConfNumberParameter chargeEfficiency = IotWebConfNumberParameter("Charge efficiency [%]", "cheff", chargeEfficiencyPercentTxt, NUMBER_LEN, chargeEfficiencyPercentTxt);
-IotWebConfNumberParameter minSoc = IotWebConfNumberParameter("Minimun SOC [%]", "minsoc", minPercentTxt, NUMBER_LEN, minPercentTxt);
+
+iotwebconf::IntTParameter<uint16_t> battCapacity =
+  iotwebconf::Builder<iotwebconf::IntTParameter<uint16_t>>("battAh").
+  label("Battery capacity [Ah]").
+  defaultValue(100).
+  min(1).
+  step(1).
+  placeholder("1..65535").
+  build();
+
+iotwebconf::IntTParameter<uint16_t> chargeEfficiency =
+  iotwebconf::Builder<iotwebconf::IntTParameter<uint16_t>>("cheff").
+  label("Charge efficiency [%]").
+  defaultValue(95).
+  min(1).
+  max(100).
+  step(1).
+  placeholder("1..100").
+  build();
+
+iotwebconf::IntTParameter<uint16_t> minSoc =
+  iotwebconf::Builder<iotwebconf::IntTParameter<uint16_t>>("minsoc").
+  label("Minimun SOC [%]").
+  defaultValue(10).
+  min(1).
+  max(100).
+  step(1).
+  placeholder("1..100").
+  build();
 
 IotWebConfParameterGroup fullGroup = IotWebConfParameterGroup("FullD","Full detection");
-IotWebConfNumberParameter tailCurrent = IotWebConfNumberParameter("Tail current [mA]", "tailC", tailCurrentmATxt, NUMBER_LEN, tailCurrentmATxt);
-IotWebConfNumberParameter fullVoltage = IotWebConfNumberParameter("Voltage when full [mV]", "fullV", fullVoltagemVTxt, NUMBER_LEN, fullVoltagemVTxt);
-IotWebConfNumberParameter fullDelay = IotWebConfNumberParameter("Delay before full [s]", "fullDelay", FullDelaySTxt, NUMBER_LEN, FullDelaySTxt);
+
+iotwebconf::IntTParameter<uint16_t> tailCurrent =
+  iotwebconf::Builder<iotwebconf::IntTParameter<uint16_t>>("tailC").
+  label("Tail current [mA]").
+  defaultValue(1000).
+  min(1).
+  step(1).
+  placeholder("1..65535").
+  build();
+
+
+iotwebconf::IntTParameter<uint16_t> fullVoltage =
+  iotwebconf::Builder<iotwebconf::IntTParameter<uint16_t>>("fullV").
+  label("Voltage when full [mV]").
+  defaultValue(55200).
+  min(1).
+  step(1).
+  placeholder("1..65535").
+  build();
+
+iotwebconf::IntTParameter<uint16_t> fullDelay =
+  iotwebconf::Builder<iotwebconf::IntTParameter<uint16_t>>("fullDelay").
+  label("Delay before full [s]").
+  defaultValue(30).
+  min(1).
+  step(1).
+  placeholder("1..65535").
+  build();
+
 
 IotWebConfParameterGroup modbusGroup = IotWebConfParameterGroup("modbus","Modbus settings");
-IotWebConfNumberParameter modbusId = IotWebConfNumberParameter("MOdbus Id", "mbid", modbusIdTxt, NUMBER_LEN, modbusIdTxt);
-
-
-
+iotwebconf::IntTParameter<uint16_t> modbusId =
+  iotwebconf::Builder<iotwebconf::IntTParameter<uint16_t>>("mbid").
+  label("Modbus Id").
+  defaultValue(2).
+  min(1).
+  max(128).
+  step(1).
+  placeholder("1..128").
+  build();
 
 void wifiConnected()
 {
@@ -206,15 +273,15 @@ void handleRoot()
 
 
 void convertParams() {
-    gShuntResistancemV = server.arg(shuntResistance.getId()).toFloat();
-    gMaxCurrentA = server.arg(maxCurrent.getId()).toInt();
-    gCapacityAh = server.arg(battCapacity.getId()).toInt();
-    gChargeEfficiencyPercent = server.arg(chargeEfficiency.getId()).toInt();
-    gMinPercent = server.arg(minSoc.getId()).toInt();
-    gTailCurrentmA = server.arg(tailCurrent.getId()).toInt();
-    gFullVoltagemV = server.arg(fullVoltage.getId()).toInt();
-    gFullDelayS = server.arg(fullDelay.getId()).toInt();
-    gModbusId = server.arg(modbusId.getId()).toInt();
+    gShuntResistancemV = shuntResistance.value();
+    gMaxCurrentA = maxCurrent.value();
+    gCapacityAh = battCapacity.value();
+    gChargeEfficiencyPercent = chargeEfficiency.value();
+    gMinPercent = minSoc.value();
+    gTailCurrentmA = tailCurrent.value();
+    gFullVoltagemV = fullVoltage.value();
+    gFullDelayS = fullDelay.value();
+    gModbusId = modbusId.value();
 }
 
 void configSaved()

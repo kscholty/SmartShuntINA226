@@ -273,6 +273,8 @@ void sensorInit() {
 
     // Display configuration
     checkConfig();
+
+    gBattery.setParameters(gCapacityAh,gChargeEfficiencyPercent,gMinPercent,gTailCurrentmA,gFullVoltagemV,gFullDelayS);
 }
 
 void updateAhCounter() {
@@ -288,6 +290,9 @@ void updateAhCounter() {
     float current = ina.readShuntCurrent();
     //Serial.printf("current is: %.2f\n",current);
     gBattery.updateConsumption(current,sampleTime,count);
+    if(count > 1) {
+        Serial.printf("Overflow %d\n",count);
+    } 
 }
 
 void sensorLoop() {
