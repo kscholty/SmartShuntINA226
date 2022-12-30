@@ -3,6 +3,7 @@
 #include <INA226.h>
 #include <Wire.h>
 
+#include "common.h"
 #include "sensorHandling.h"
 #include "statusHandling.h"
 
@@ -16,7 +17,7 @@ struct Shunt {
 volatile uint16_t alertCounter = 0;
 double sampleTime = 0;
 
-static Shunt PZEM017ShuntData[4] = {
+Shunt PZEM017ShuntData[4] = {
     {0.00075, 100}, {0.0015, 50}, {0.000375, 200}, {0.000250, 300}};
 
 static INA226 ina(Wire);
@@ -228,11 +229,19 @@ void checkConfig() {
     Serial.println(" W");
 }
 
-void setShunt(uint16_t id) {
+void sensorSetShunt(uint16_t id) {
     if(id < sizeof(PZEM017ShuntData)/ sizeof(Shunt)) {
+        gShuntResistancemR = PZEM017ShuntData[id].resistance * 1000.0f;
+        gMaxCurrentA = PZEM017ShuntData[id].maxCurrent;
+
         ina.calibrate(PZEM017ShuntData[id].resistance,PZEM017ShuntData[id].maxCurrent);
     }
     
+}
+
+void setParameters() {
+    ina.calibrate(gShuntResistancemR / 1000, gMaxCurrentA);
+    gBattery.setParameters(gCapacityAh,gChargeEfficiencyPercent,gMinPercent,gTailCurrentmA,gFullVoltagemV,gFullDelayS);
 }
 
 void sensorInit() {
@@ -254,9 +263,9 @@ void sensorInit() {
     ina.configure(INA226_AVERAGES_64, INA226_BUS_CONV_TIME_2116US,
                     INA226_SHUNT_CONV_TIME_2116US, INA226_MODE_SHUNT_BUS_CONT);
 
-    // Calibrate INA226.
-    // 300A / 75mV
-    ina.calibrate(0.00025, 300);
+   
+    setParameters();
+    gBattery.setBatterySoc(1);
     // 200A / 75mV
     // ina.calibrate(0.000375,160)); // this is the real setup at the target
     // device
@@ -269,7 +278,7 @@ void sensorInit() {
     uint16_t samples = translateSampleCount(ina.getAverages());
 
     // This is the time it takes to create a new measurement
-    sampleTime = (conversionTimeShunt + conversionTimeBus) * 0.000001 * samples;
+    sampleTime = (conversionTimeShunt + conversionTimeBus) * samples * 0.000001  ;
 
     // Display configuration
     checkConfig();
@@ -299,6 +308,10 @@ void sensorLoop() {
     static unsigned long lastUpdate = 0;
     unsigned long now = millis();
     
+    if(gParamsChanged) {
+        setParameters();
+    }
+
     while (alertCounter && ina.isConversionReady()) {      
         updateAhCounter();        
     }

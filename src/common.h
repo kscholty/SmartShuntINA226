@@ -16,6 +16,6 @@ extern uint16_t gMinPercent;
 extern uint16_t gTailCurrentmA;
 extern uint16_t gFullVoltagemV;
 extern uint16_t gFullDelayS;
-extern float gShuntResistancemV;
+extern float gShuntResistancemR;
 extern uint16_t gMaxCurrentA;
 extern uint16_t gModbusId;

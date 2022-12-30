@@ -25,12 +25,13 @@ class BatteryStatus {
 
         float voltage() {return lastVoltage;}
         float current() {return lastCurrent;}
-        float averageCurrent() {return getAverageCurrent();}
+        float averageCurrent() {return getAverageConsumption();}
 
-    protected:        
         void setBatterySoc(float val);
-        float getAverageCurrent();
-        RingBuf<float,GlidingAverageWindow> consumptionValues;
+        
+    protected:                
+        float getAverageConsumption();
+        RingBuf<float,GlidingAverageWindow> currentValues;
         float batteryCapacity;
         float chargeEfficiency; // Value between 0 and 1 (representing percent)       
         float tailCurrent; // For full detection, A going ointo the battery
@@ -45,7 +46,7 @@ class BatteryStatus {
         float remainAs;
         float consumedAs;
         float tTgVal;
-        float glidingAverageConsumption;
+        float glidingAverageCurrent;
         float lastSoc;
 };
 

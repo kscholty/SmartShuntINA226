@@ -17,24 +17,12 @@
 
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600,SERIAL_8N1);
 
     wifiSetup();
     sensorInit();
     modbusInit();
 }
-
-// Grab current value every time the alert flag is set.
-// That should be every 2.116*64*2=270.848 ms
-// Therefore, every time it is read, we add shuntCurrent*0,270848 As of current
-// The only thing to ensure is that we don't exceed these 270.848ms in loop(), because then we could miss a value.
-// Idea: Count number of interrupts between calculations.
-
-// Offer Power and Voltage values via modbus, but don't bother to read them 
-// regularely (maybe the bus voltage?).
-
-// Store configuration in flash memory.
-// USe WLAN for configuration?
 
 void loop() {
  

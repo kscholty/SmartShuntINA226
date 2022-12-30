@@ -1,9 +1,14 @@
 
 #include <Arduino.h>
 #include <ModbusRTU.h>
+#include "common.h"
 #include "modbusHandling.h"
 #include "statusHandling.h"
+#include "webHandling.h"
+#include "sensorHandling.h"
 
+
+static bool saveConfig = false;
 static ModbusRTU *modbusServer = 0;
 
 // These are the Input Registers
@@ -41,6 +46,7 @@ enum HOLDING_REGISTERS {
     REG_SHUNT_VALUE,
 
     //Missing yet are the other config parameters
+    REG_SET_SOC,
     REG_NUM_HOLDING_REGISTERS
 };
 
@@ -75,7 +81,7 @@ uint16_t inputGetter(uint16_t address)
       return (int16_t) gBattery.tTg();
       break;
     case REG_SOC:
-      return gBattery.soc();
+      return gBattery.soc() * 100;
       break;
     case REG_FULL:
       return gBattery.isFull();
@@ -104,7 +110,9 @@ uint16_t holdingGetter(uint16_t address)
     case REG_SHUNT_VALUE:
       return (uint16_t) (((uint32)(gBattery.voltage()*gBattery.current()*10))>>16);
       break;
-      
+    case REG_SET_SOC:
+        return inputGetter(REG_SOC);
+        break;
     default:
       return UINT16_MAX;
   }
@@ -130,21 +138,26 @@ uint16_t setter(TRegister *reg, uint16_t val)
       break;
     case REG_MODBUS_ADDRESS:
         if(val != gModbusId) {
-            modbusServer->server(gModbusId);        
             gModbusId = val;
-            // Todo: make sure it's store in config memory.
+            modbusServer->server(gModbusId);                    
+            wifiSetModbusId();
+            saveConfig = true;
         }
         return gModbusId;
       break;
     case REG_SHUNT_VALUE:
       if(val<4) {
-
+        sensorSetShunt(val);
+        wifiSetShuntVals();
+        saveConfig = true;
         return val;
       }
-
       return 0;
       break;
-      
+    case REG_SET_SOC:
+        gBattery.setBatterySoc(((float)val) / 100.0f);
+        return gBattery.soc() * 100;
+        break;
     default:
       return UINT16_MAX;
   }
@@ -199,6 +212,14 @@ void modbusLoop()
 
     // poll for Modbus requests
     modbusServer->task();
+    if(saveConfig) {
+        saveConfig = false;
+        wifiStoreConfig();
+        // We already updated the sensor, 
+        // so it's not required to reload the 
+        // Data into the sensor.
+        gParamsChanged = false;
+    }
 }
 
 

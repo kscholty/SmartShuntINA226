@@ -58,7 +58,7 @@ uint16_t gFullVoltagemV;
 
 uint16_t gFullDelayS;
 
-float gShuntResistancemV;
+float gShuntResistancemR;
 
 uint16_t gMaxCurrentA;
 
@@ -78,8 +78,8 @@ iotwebconf::FloatTParameter shuntResistance =
    placeholder("e.g. 0.75").
    build();
 
-iotwebconf::IntTParameter<uint16_t> maxCurrent =
-  iotwebconf::Builder<iotwebconf::IntTParameter<uint16_t>>("maxA").
+iotwebconf::UIntTParameter<uint16_t> maxCurrent =
+  iotwebconf::Builder<iotwebconf::UIntTParameter<uint16_t>>("maxA").
   label("Expected max current [A]").
   defaultValue(200).
   min(1).
@@ -90,8 +90,8 @@ iotwebconf::IntTParameter<uint16_t> maxCurrent =
 
 IotWebConfParameterGroup shuntGroup = IotWebConfParameterGroup("ShuntConf","Smart shunt");
 
-iotwebconf::IntTParameter<uint16_t> battCapacity =
-  iotwebconf::Builder<iotwebconf::IntTParameter<uint16_t>>("battAh").
+iotwebconf::UIntTParameter<uint16_t> battCapacity =
+  iotwebconf::Builder<iotwebconf::UIntTParameter<uint16_t>>("battAh").
   label("Battery capacity [Ah]").
   defaultValue(100).
   min(1).
@@ -99,8 +99,8 @@ iotwebconf::IntTParameter<uint16_t> battCapacity =
   placeholder("1..65535").
   build();
 
-iotwebconf::IntTParameter<uint16_t> chargeEfficiency =
-  iotwebconf::Builder<iotwebconf::IntTParameter<uint16_t>>("cheff").
+iotwebconf::UIntTParameter<uint16_t> chargeEfficiency =
+  iotwebconf::Builder<iotwebconf::UIntTParameter<uint16_t>>("cheff").
   label("Charge efficiency [%]").
   defaultValue(95).
   min(1).
@@ -109,8 +109,8 @@ iotwebconf::IntTParameter<uint16_t> chargeEfficiency =
   placeholder("1..100").
   build();
 
-iotwebconf::IntTParameter<uint16_t> minSoc =
-  iotwebconf::Builder<iotwebconf::IntTParameter<uint16_t>>("minsoc").
+iotwebconf::UIntTParameter<uint16_t> minSoc =
+  iotwebconf::Builder<iotwebconf::UIntTParameter<uint16_t>>("minsoc").
   label("Minimun SOC [%]").
   defaultValue(10).
   min(1).
@@ -121,8 +121,8 @@ iotwebconf::IntTParameter<uint16_t> minSoc =
 
 IotWebConfParameterGroup fullGroup = IotWebConfParameterGroup("FullD","Full detection");
 
-iotwebconf::IntTParameter<uint16_t> tailCurrent =
-  iotwebconf::Builder<iotwebconf::IntTParameter<uint16_t>>("tailC").
+iotwebconf::UIntTParameter<uint16_t> tailCurrent =
+  iotwebconf::Builder<iotwebconf::UIntTParameter<uint16_t>>("tailC").
   label("Tail current [mA]").
   defaultValue(1000).
   min(1).
@@ -131,8 +131,8 @@ iotwebconf::IntTParameter<uint16_t> tailCurrent =
   build();
 
 
-iotwebconf::IntTParameter<uint16_t> fullVoltage =
-  iotwebconf::Builder<iotwebconf::IntTParameter<uint16_t>>("fullV").
+iotwebconf::UIntTParameter<uint16_t> fullVoltage =
+  iotwebconf::Builder<iotwebconf::UIntTParameter<uint16_t>>("fullV").
   label("Voltage when full [mV]").
   defaultValue(55200).
   min(1).
@@ -140,8 +140,8 @@ iotwebconf::IntTParameter<uint16_t> fullVoltage =
   placeholder("1..65535").
   build();
 
-iotwebconf::IntTParameter<uint16_t> fullDelay =
-  iotwebconf::Builder<iotwebconf::IntTParameter<uint16_t>>("fullDelay").
+iotwebconf::UIntTParameter<uint16_t> fullDelay =
+  iotwebconf::Builder<iotwebconf::UIntTParameter<uint16_t>>("fullDelay").
   label("Delay before full [s]").
   defaultValue(30).
   min(1).
@@ -151,8 +151,8 @@ iotwebconf::IntTParameter<uint16_t> fullDelay =
 
 
 IotWebConfParameterGroup modbusGroup = IotWebConfParameterGroup("modbus","Modbus settings");
-iotwebconf::IntTParameter<uint16_t> modbusId =
-  iotwebconf::Builder<iotwebconf::IntTParameter<uint16_t>>("mbid").
+iotwebconf::UIntTParameter<uint16_t> modbusId =
+  iotwebconf::Builder<iotwebconf::UIntTParameter<uint16_t>>("mbid").
   label("Modbus Id").
   defaultValue(2).
   min(1).
@@ -160,6 +160,21 @@ iotwebconf::IntTParameter<uint16_t> modbusId =
   step(1).
   placeholder("1..128").
   build();
+
+
+void wifiSetShuntVals() {
+    shuntResistance.value() = gShuntResistancemR;
+    maxCurrent.value() = gMaxCurrentA;
+}
+
+void wifiSetModbusId() {
+    modbusId.value() = gModbusId;
+}
+
+void wifiStoreConfig() {
+    iotWebConf.saveConfig();
+}
+
 
 void wifiConnected()
 {
@@ -203,7 +218,7 @@ void wifiSetup()
   Serial.println("Converting params");
   convertParams();
   Serial.println("Values are:");
-  Serial.printf("Resistance: %.2f\n",gShuntResistancemV);
+  Serial.printf("Resistance: %.2f\n",gShuntResistancemR);
   Serial.printf("Capacity %df\n",gCapacityAh);
   Serial.printf("MOdbus ID %df\n",gModbusId);
   
@@ -246,7 +261,7 @@ void handleRoot()
   s += "<title>INR based smart shunt</title></head><body>";
   
   s += "<br><br><b>Config Values</b> <ul>";
-  s += "<li>Shunt resistance  : "+String(gShuntResistancemV);
+  s += "<li>Shunt resistance  : "+String(gShuntResistancemR);
   s += "<li>Shunt max current : "+String(gMaxCurrentA);
   s += "<li>Batt capacity     : "+String(gCapacityAh);
   s += "<li>Batt efficiency   : "+String(gChargeEfficiencyPercent);
@@ -273,7 +288,7 @@ void handleRoot()
 
 
 void convertParams() {
-    gShuntResistancemV = shuntResistance.value();
+    gShuntResistancemR = shuntResistance.value();
     gMaxCurrentA = maxCurrent.value();
     gCapacityAh = battCapacity.value();
     gChargeEfficiencyPercent = chargeEfficiency.value();
@@ -285,8 +300,7 @@ void convertParams() {
 }
 
 void configSaved()
-{
-  Serial.println("Configuration was updated.");
+{ 
   convertParams();
   gParamsChanged = true;
 } 
@@ -294,8 +308,7 @@ void configSaved()
 
 
 bool formValidator(iotwebconf::WebRequestWrapper* webRequestWrapper)
-{
-  Serial.println("Validating form.");
+{ 
   bool result = true;
 
   int l = 0;

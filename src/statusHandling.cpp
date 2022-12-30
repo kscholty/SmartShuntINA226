@@ -12,7 +12,7 @@ BatteryStatus::BatteryStatus() {
     remainAs = 0;
     consumedAs = 0;
     tTgVal = 0;
-    glidingAverageConsumption = 0;    
+    glidingAverageCurrent = 0;    
 }
 
 void BatteryStatus::setParameters(uint16_t capacityAh, uint16_t chargeEfficiencyPercent, uint16_t minPercent, uint16_t tailCurrentmA, uint16_t fullVoltagemV,uint16_t fullDelayS) 
@@ -24,9 +24,6 @@ void BatteryStatus::setParameters(uint16_t capacityAh, uint16_t chargeEfficiency
         fullVoltage = fullVoltagemV;
         minAs = minPercent * batteryCapacity / 100.0f;
         fullDelay = ((unsigned long)fullDelayS) *1000;    
-
-        remainAs =  batteryCapacity;   
-
         //Serial.printf("Init values: Capacity %.3f, efficiency %.3f, fullDelay %ld, \n",batteryCapacity,chargeEfficiency,fullDelay);
 
 }
@@ -48,9 +45,9 @@ void BatteryStatus::updateSOC() {
 }
 
 void BatteryStatus::updateTtG() {
-    uint16_t count = consumptionValues.size();
-    if (glidingAverageConsumption > 0 && count != 0) {
-         tTgVal = max(remainAs - minAs, 0.0f) / (glidingAverageConsumption / count);
+    float avgCurrent = getAverageConsumption();
+    if (avgCurrent > 0.0) {
+         tTgVal = max(remainAs - minAs, 0.0f) / avgCurrent;
     }  else {
         tTgVal = INFINITY;
     }
@@ -61,40 +58,47 @@ void BatteryStatus::updateConsumption(float current, float period,
 
     // We use the average between the last and the current value for summation.
     float periodConsumption;
-    
-    if (consumptionValues.isFull()) {
-        float oldVal;
-        consumptionValues.pop(oldVal);
-        glidingAverageConsumption += oldVal;
-    }
 
+    for (int i = 0; i < numPeriods; ++i) {
+        if (currentValues.isFull()) {
+          float oldVal;
+          currentValues.pop(oldVal);
+          glidingAverageCurrent += oldVal;
+        }
+        currentValues.push(current);
+        // Assumtion: Consumption is negative
+        glidingAverageCurrent -= current;
+    }     
 
-    if(consumptionValues.isEmpty()) {
+    if(currentValues.isEmpty()) {
         // This is the first measurement, so we don't have an old current value
         lastCurrent = current;
     }
     
     periodConsumption = (lastCurrent + current) / 2 * period * numPeriods;
-    consumptionValues.push(periodConsumption);
-
-    // Assumtion: Consumption is negative
-    glidingAverageConsumption -= periodConsumption;
-
+    
     if (periodConsumption > 0) {
+        // We are charging
         periodConsumption *= chargeEfficiency;
+        if(remainAs<0.0) {
+            // It seems we switch from discharging to charging
+            // with assumed very low load status. So let's assume the battery is empty...
+            remainAs = 0.0;
+        }
     }
 
     remainAs += periodConsumption;
+    
     consumedAs -= periodConsumption;
     lastCurrent = current;
 
     //Serial.printf("Consumption: Current: %.3f period cons %.3f, glidingAvg %.3f remain As %.3f\n",current,periodConsumption,glidingAverageConsumption, remainAs);
 }
 
-float BatteryStatus::getAverageCurrent() {
-    uint16_t count = consumptionValues.size();
+float BatteryStatus::getAverageConsumption() {
+    uint16_t count = currentValues.size();
     if (count != 0) {
-        return  glidingAverageConsumption / count;
+        return  glidingAverageCurrent / count;
     } else {
         return 0;
     }
@@ -111,8 +115,8 @@ bool BatteryStatus::checkFull(float currVoltage) {
         }
         unsigned long delay = now - fullReached;
        if(delay >= fullDelay) {
-            float current = getAverageCurrent();
-            if (current > 0 && current < tailCurrent) {
+            float current = getAverageConsumption();
+            if (current > 0.0 && current < tailCurrent) {
                 setBatterySoc(1);
                 //Serial.println("Full reached");
                 return true;
