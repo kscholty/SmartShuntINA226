@@ -35,7 +35,7 @@
 
 #define SOC_FORM \
 "<hr>\
-  <b>Set state of charge</b><br>\
+  <b>Set state of charge</b><br><br>\
   <form action=\"/setsoc\" method=\"POST\">\
   <div>\
   <label for=\"soc\">New battery soc: </label>\
@@ -293,7 +293,7 @@ void handleRoot()
   s += "<title>INR based smart shunt</title></head><body>";
   
   s += "<br><br><b>Config Values</b> <ul>";
-  s += "<li>Shunt resistance  : "+String(gShuntResistancemR) + " mm&#8486;";
+  s += "<li>Shunt resistance  : "+String(gShuntResistancemR) + " m&#8486;";
   s += "<li>Shunt max current : "+String(gMaxCurrentA) +" A";
   s += "<li>Batt capacity     : "+String(gCapacityAh) + " Ah";
   s += "<li>Batt efficiency   : "+String(gChargeEfficiencyPercent) + " %";

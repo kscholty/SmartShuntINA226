@@ -91,6 +91,7 @@ uint16_t translateSampleCount(ina226_averages_t value) {
   return result;
 }
 
+#ifdef DEBUG_SENSOR
 void checkConfig() {
     Serial.print("Mode:                  ");
     switch (ina.getMode()) {
@@ -227,7 +228,9 @@ void checkConfig() {
     Serial.print("Max power:             ");
     Serial.print(ina.getMaxPower());
     Serial.println(" W");
+
 }
+#endif
 
 void sensorSetShunt(uint16_t id) {
     if(id < sizeof(PZEM017ShuntData)/ sizeof(Shunt)) {
@@ -280,8 +283,10 @@ void sensorInit() {
     // This is the time it takes to create a new measurement
     sampleTime = (conversionTimeShunt + conversionTimeBus) * samples * 0.000001  ;
 
+#ifdef DEBUG_SENSOR
     // Display configuration
     checkConfig();
+#endif
 
     gBattery.setParameters(gCapacityAh,gChargeEfficiencyPercent,gMinPercent,gTailCurrentmA,gFullVoltagemV,gFullDelayS);
 }
