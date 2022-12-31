@@ -29,7 +29,7 @@
             <title>SOC set</title>\
         </head>\
         <body>\
-            soc has been updated <br><a href='/'>Back</a>\
+            Soc has been updated <br><a href='/'>Back</a>\
         </body>\
     </html>\n"
 
@@ -211,7 +211,7 @@ void onSetSoc() {
     if(!soc.isEmpty()) {
         uint16_t socVal = soc.toInt();
         gBattery.setBatterySoc(((float)socVal)/100.0);
-        Serial.printf("Set soc to %.2f",gBattery.soc());
+        //Serial.printf("Set soc to %.2f",gBattery.soc());
     }
 
     server.send(200, "text/html", SOC_RESPONSE);
