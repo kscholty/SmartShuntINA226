@@ -7,3 +7,4 @@ The smart shunt has two main interfaces.
 1) A web interface for human users. It allows setting the main parameters of the system and disoplays the current status of the system
 2) A modbus interface that is based on a PZEM017 energy meter but enhances it with the values mentioned above
 
+You need the version of the INA226lib from here as well. My changes have not yet been incorporated upstream.
