@@ -117,7 +117,7 @@ bool BatteryStatus::checkFull(float currVoltage) {
        if(delay >= fullDelay) {
             float current = getAverageConsumption();
             if (current > 0.0 && current < tailCurrent) {
-                setBatterySoc(1);
+                setBatterySoc(1.0);
                 //Serial.println("Full reached");
                 return true;
             }
@@ -133,6 +133,9 @@ bool BatteryStatus::checkFull(float currVoltage) {
 void BatteryStatus::setBatterySoc(float val) {
     socVal = val;
     remainAs = batteryCapacity * val;
+    if(val>=1.0) {
+        fullReached = millis();
+    }
     updateTtG();
 }
 

@@ -18,6 +18,30 @@
 #include "common.h"
 #include "statusHandling.h"
 
+#define SOC_RESPONSE \
+"<!DOCTYPE HTML>\
+    <html> <head>\
+            <meta charset=\"UTF-8\">\
+            <meta http-equiv=\"refresh\" content=\"3; url=/\">\
+            <script type=\"text/javascript\">\
+                window.location.href = \"/\"\
+            </script>\
+            <title>SOC set</title>\
+        </head>\
+        <body>\
+            soc has been updated <br><a href='/'>Back</a>\
+        </body>\
+    </html>\n"
+
+#define SOC_FORM \
+"<hr>\
+  <b>Set state of charge</b><br>\
+  <form action=\"/setsoc\" method=\"POST\">\
+  <div>\
+  <label for=\"soc\">New battery soc: </label>\
+  <input name=\"soc\" id=\"soc\" value=\"100\" />\
+  <button type=\"submit\">Set</button></div> <br><br>"
+
 // -- Initial password to connect to the Thing, when it creates an own Access Point.
 const char wifiInitialApPassword[] = "12345678";
 
@@ -181,6 +205,18 @@ void wifiConnected()
    ArduinoOTA.begin();
 }
 
+void onSetSoc() {
+    String soc = server.arg("soc");
+    soc.trim();
+    if(!soc.isEmpty()) {
+        uint16_t socVal = soc.toInt();
+        gBattery.setBatterySoc(((float)socVal)/100.0);
+        Serial.printf("Set soc to %.2f",gBattery.soc());
+    }
+
+    server.send(200, "text/html", SOC_RESPONSE);
+} 
+
 void wifiSetup()
 {
   
@@ -215,18 +251,14 @@ void wifiSetup()
   // -- Initializing the configuration.
   iotWebConf.init();
   
-  Serial.println("Converting params");
   convertParams();
-  Serial.println("Values are:");
-  Serial.printf("Resistance: %.2f\n",gShuntResistancemR);
-  Serial.printf("Capacity %df\n",gCapacityAh);
-  Serial.printf("MOdbus ID %df\n",gModbusId);
-  
 
   // -- Set up required URL handlers on the web server.
   server.on("/", handleRoot);
   server.on("/config", [] { iotWebConf.handleConfig(); });
   server.onNotFound([]() { iotWebConf.handleNotFound(); });
+
+  server.on("/setsoc",HTTP_POST,onSetSoc);
 }
 
 void wifiLoop()
@@ -261,25 +293,29 @@ void handleRoot()
   s += "<title>INR based smart shunt</title></head><body>";
   
   s += "<br><br><b>Config Values</b> <ul>";
-  s += "<li>Shunt resistance  : "+String(gShuntResistancemR);
-  s += "<li>Shunt max current : "+String(gMaxCurrentA);
-  s += "<li>Batt capacity     : "+String(gCapacityAh);
-  s += "<li>Batt efficiency   : "+String(gChargeEfficiencyPercent);
-  s += "<li>Min soc           : "+String(gMinPercent);
-  s += "<li>Tail current      : "+String(gTailCurrentmA);
-  s += "<li>Batt full voltage : "+String(gFullVoltagemV);
-  s += "<li>Batt full delay   : "+String(gFullDelayS);
+  s += "<li>Shunt resistance  : "+String(gShuntResistancemR) + " mm&#8486;";
+  s += "<li>Shunt max current : "+String(gMaxCurrentA) +" A";
+  s += "<li>Batt capacity     : "+String(gCapacityAh) + " Ah";
+  s += "<li>Batt efficiency   : "+String(gChargeEfficiencyPercent) + " %";
+  s += "<li>Min soc           : "+String(gMinPercent) + " %";
+  s += "<li>Tail current      : "+String(gTailCurrentmA) + " mA";
+  s += "<li>Batt full voltage : "+String(gFullVoltagemV) + " mV";
+  s += "<li>Batt full delay   : "+String(gFullDelayS) + " s";
   s += "<li>Modbus ID         : "+String(gModbusId);
   s += "</ul><hr><br>";
   
-  s += "<br><br><b>Dynamic Values</b> <ul>";
-  s += "<li>Battery Voltage: "+String(gBattery.voltage());
-  s += "<li>Shunt current  : "+String(gBattery.current());
-  s += "<li>Avg current    : "+String(gBattery.averageCurrent());
-  s += "<li>Battery soc    : "+String(gBattery.soc());
-  s += "<li>Time to go     : "+String(gBattery.tTg());
+  s += "<br><b>Dynamic Values</b> <ul>";
+  s += "<li>Battery Voltage: "+String(gBattery.voltage()) + " V";
+  s += "<li>Shunt current  : "+String(gBattery.current()) + " A";
+  s += "<li>Avg consumption: "+String(gBattery.averageCurrent()) + " A";
+  s += "<li>Battery soc    : "+String(gBattery.soc()) + " %";
+  s += "<li>Time to go     : "+String(gBattery.tTg())+ " s";
   s += "<li>Battery full   : "+String(gBattery.isFull());
   s += "</ul>";
+
+  // The input for SOC
+  s += SOC_FORM;
+  
   s += "Go to <a href='config'>configure page</a> to change configuration.";
   s += "</body></html>\n";
 

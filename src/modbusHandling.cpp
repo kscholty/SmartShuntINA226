@@ -156,7 +156,7 @@ uint16_t setter(TRegister *reg, uint16_t val)
       break;
     case REG_SET_SOC:
         gBattery.setBatterySoc(((float)val) / 100.0f);
-        return gBattery.soc() * 100;
+        return inputGetter(REG_SOC);
         break;
     default:
       return UINT16_MAX;
@@ -217,7 +217,7 @@ void modbusLoop()
         wifiStoreConfig();
         // We already updated the sensor, 
         // so it's not required to reload the 
-        // Data into the sensor.
+        // data into the sensor.
         gParamsChanged = false;
     }
 }
