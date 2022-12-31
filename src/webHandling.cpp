@@ -34,7 +34,7 @@
     </html>\n"
 
 #define SOC_FORM \
-"<hr>\
+"<hr><br>\
   <b>Set state of charge</b><br><br>\
   <form action=\"/setsoc\" method=\"POST\">\
   <div>\
@@ -308,7 +308,7 @@ void handleRoot()
   s += "<li>Battery Voltage: "+String(gBattery.voltage()) + " V";
   s += "<li>Shunt current  : "+String(gBattery.current()) + " A";
   s += "<li>Avg consumption: "+String(gBattery.averageCurrent()) + " A";
-  s += "<li>Battery soc    : "+String(gBattery.soc()) + " %";
+  s += "<li>Battery soc    : "+String(gBattery.soc()) ;
   s += "<li>Time to go     : "+String(gBattery.tTg())+ " s";
   s += "<li>Battery full   : "+String(gBattery.isFull());
   s += "</ul>";

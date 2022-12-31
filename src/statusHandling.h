@@ -21,7 +21,7 @@ class BatteryStatus {
         //Getters
         float tTg() {return tTgVal;}
         float soc() {return socVal;}
-        bool isFull() { return (fullReached != 0);}
+        bool isFull() { return (fullReachedAt != 0);}
 
         float voltage() {return lastVoltage;}
         float current() {return lastCurrent;}
@@ -41,7 +41,7 @@ class BatteryStatus {
 
         float lastVoltage;
         float lastCurrent;        
-        unsigned long fullReached;
+        unsigned long fullReachedAt;
         float socVal;
         float remainAs;
         float consumedAs;
