@@ -4,6 +4,8 @@
         "unordered_map": "cpp",
         "numeric": "cpp",
         "ostream": "cpp",
-        "random": "cpp"
+        "random": "cpp",
+        "memory": "cpp",
+        "tuple": "cpp"
     }
 }

@@ -303,15 +303,20 @@ void handleRoot()
   s += "<li>Batt full delay   : "+String(gFullDelayS) + " s";
   s += "<li>Modbus ID         : "+String(gModbusId);
   s += "</ul><hr><br>";
+
+  s += "<br><b>Dynamic Values</b>";
   
-  s += "<br><b>Dynamic Values</b> <ul>";
-  s += "<li>Battery Voltage: "+String(gBattery.voltage()) + " V";
-  s += "<li>Shunt current  : "+String(gBattery.current()) + " A";
-  s += "<li>Avg consumption: "+String(gBattery.averageCurrent()) + " A";
-  s += "<li>Battery soc    : "+String(gBattery.soc()) ;
-  s += "<li>Time to go     : "+String(gBattery.tTg())+ " s";
-  s += "<li>Battery full   : "+String(gBattery.isFull());
-  s += "</ul>";
+  if (gSensorInitialized) {
+    s += "<ul> <li>Battery Voltage: " + String(gBattery.voltage()) + " V";
+    s += "<li>Shunt current  : " + String(gBattery.current()) + " A";
+    s += "<li>Avg consumption: " + String(gBattery.averageCurrent()) + " A";
+    s += "<li>Battery soc    : " + String(gBattery.soc());
+    s += "<li>Time to go     : " + String(gBattery.tTg()) + " s";
+    s += "<li>Battery full   : " + String(gBattery.isFull());
+    s += "</ul>";
+  } else {
+    s += "<br><div><font color=\"red\" size=+1><b>Sensor failure!</b></font></div><br>";
+  }
 
   // The input for SOC
   s += SOC_FORM;

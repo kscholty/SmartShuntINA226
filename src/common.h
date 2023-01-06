@@ -19,3 +19,4 @@ extern uint16_t gFullDelayS;
 extern float gShuntResistancemR;
 extern uint16_t gMaxCurrentA;
 extern uint16_t gModbusId;
+extern bool gSensorInitialized;

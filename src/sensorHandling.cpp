@@ -16,6 +16,7 @@ struct Shunt {
 
 volatile uint16_t alertCounter = 0;
 double sampleTime = 0;
+bool gSensorInitialized=false;
 
 Shunt PZEM017ShuntData[4] = {
     {0.00075, 100}, {0.0015, 50}, {0.000375, 200}, {0.000250, 300}};
@@ -242,36 +243,19 @@ void sensorSetShunt(uint16_t id) {
     
 }
 
-void setParameters() {
-    ina.calibrate(gShuntResistancemR / 1000, gMaxCurrentA);
-    gBattery.setParameters(gCapacityAh,gChargeEfficiencyPercent,gMinPercent,gTailCurrentmA,gFullVoltagemV,gFullDelayS);
-}
-
-void sensorInit() {
-    Wire.begin();
-
+void setupSensor() {
     // Default INA226 address is 0x40
-    bool success = ina.begin();
+    gSensorInitialized = ina.begin();
 
     // Check if the connection was successful, stop if not
-    if (!success) {
-        Serial.println("Connection error");
-        while (1)
-        ;
+    if (!gSensorInitialized) {
+        Serial.println("Connection to sensor failed");
+        
     }
-
-    attachInterrupt(digitalPinToInterrupt(D5), alert, FALLING);
-
     // Configure INA226
     ina.configure(INA226_AVERAGES_64, INA226_BUS_CONV_TIME_2116US,
                     INA226_SHUNT_CONV_TIME_2116US, INA226_MODE_SHUNT_BUS_CONT);
-
-   
-    setParameters();
-    gBattery.setBatterySoc(1);
-    // 200A / 75mV
-    // ina.calibrate(0.000375,160)); // this is the real setup at the target
-    // device
+    ina.calibrate(gShuntResistancemR / 1000, gMaxCurrentA);    
     ina.enableConversionReadyAlert();
 
     uint16_t conversionTimeShunt =
@@ -282,6 +266,13 @@ void sensorInit() {
 
     // This is the time it takes to create a new measurement
     sampleTime = (conversionTimeShunt + conversionTimeBus) * samples * 0.000001  ;
+}
+
+void sensorInit() {
+    Wire.begin();
+    attachInterrupt(digitalPinToInterrupt(D5), alert, FALLING);
+
+    setupSensor();
 
 #ifdef DEBUG_SENSOR
     // Display configuration
@@ -313,11 +304,16 @@ void sensorLoop() {
     static unsigned long lastUpdate = 0;
     unsigned long now = millis();
     
-    if(gParamsChanged) {
-        setParameters();
+    if(!gSensorInitialized) {
+        return;
     }
 
-    while (alertCounter && ina.isConversionReady()) {      
+    if(gParamsChanged) {
+        ina.calibrate(gShuntResistancemR / 1000, gMaxCurrentA);    
+        gBattery.setParameters(gCapacityAh,gChargeEfficiencyPercent,gMinPercent,gTailCurrentmA,gFullVoltagemV,gFullDelayS);
+    }
+
+    while (alertCounter && ina.isConversionReady()) {           
         updateAhCounter();        
     }
     
