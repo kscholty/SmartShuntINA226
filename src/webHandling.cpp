@@ -46,7 +46,7 @@
 const char wifiInitialApPassword[] = "12345678";
 
 // -- Configuration specific key. The value should be modified if config structure was changed.
-#define CONFIG_VERSION "B1"
+#define CONFIG_VERSION "B2"
 
 // -- When CONFIG_PIN is pulled to ground on startup, the Thing will use the initial
 //      password to buld an AP. (E.g. in case of lost password)
@@ -97,8 +97,7 @@ IotWebConfParameterGroup sysConfGroup = IotWebConfParameterGroup("SysConf","Sens
 iotwebconf::FloatTParameter shuntResistance =
    iotwebconf::Builder<iotwebconf::FloatTParameter>("shuntR").
    label("Shunt resistance [m&#8486;]").
-   defaultValue(0.75).
-   step(0.01).
+   defaultValue(0.75f).
    placeholder("e.g. 0.75").
    build();
 
@@ -106,8 +105,8 @@ iotwebconf::UIntTParameter<uint16_t> maxCurrent =
   iotwebconf::Builder<iotwebconf::UIntTParameter<uint16_t>>("maxA").
   label("Expected max current [A]").
   defaultValue(200).
-  min(1).
-  step(1).
+  min(1u).
+  step(1u).
   placeholder("1..65535").
   build();
 
@@ -217,9 +216,25 @@ void onSetSoc() {
     server.send(200, "text/html", SOC_RESPONSE);
 } 
 
+
+void handleSetRuntime() {
+String s = "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/>";  
+  s += "<title>Set runtime data</title></head><body>";
+  s += SOC_FORM;
+  s += "<UL><LI>Go to <a href='config'>configure page</a> to change configuration.";
+  s += "<LI>Go to <a href='/'>main page</a></UL>";
+
+  s += "</body></html>\n";
+
+  server.send(200, "text/html", s);
+}
+
 void wifiSetup()
 {
   
+
+  shuntResistance.customHtml = "min='0.001' max='10.0' step='0.001'";
+
   sysConfGroup.addItem(&shuntResistance);
   sysConfGroup.addItem(&maxCurrent);
 
@@ -257,7 +272,8 @@ void wifiSetup()
   server.on("/", handleRoot);
   server.on("/config", [] { iotWebConf.handleConfig(); });
   server.onNotFound([]() { iotWebConf.handleNotFound(); });
-
+  
+  server.on("/setruntime", handleSetRuntime);
   server.on("/setsoc",HTTP_POST,onSetSoc);
 }
 
@@ -289,7 +305,7 @@ void handleRoot()
   }
 
   String s = "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/>";
-
+  s += "<meta http-equiv=\"refresh\" content=\"3; url=/\">";
   s += "<title>INR based smart shunt</title></head><body>";
   
   s += "<br><br><b>Config Values</b> <ul>";
@@ -317,11 +333,9 @@ void handleRoot()
   } else {
     s += "<br><div><font color=\"red\" size=+1><b>Sensor failure!</b></font></div><br>";
   }
-
-  // The input for SOC
-  s += SOC_FORM;
   
-  s += "Go to <a href='config'>configure page</a> to change configuration.";
+  s += "<UL><LI>Go to <a href='config'>configure page</a> to change configuration.";
+  s += "<LI>Go to <a href='setruntime'>runtime modification page</a> to change runtime data.</UL>";
   s += "</body></html>\n";
 
   server.send(200, "text/html", s);

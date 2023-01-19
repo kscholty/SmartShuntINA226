@@ -29,9 +29,9 @@ enum INPUT_REGISTERS {
   REG_HIGH_VOLTAGE_ALARM_STATUS,
   REG_LOW_VOLTAGE_ALARM_STATUS,
   //These registers are not part of
-  //PZEM017
-  REG_IDENTIFIER, // This register contains the ID 0xBF39D
-  REG_TIMETOGO,
+  //PZEM017  
+  REG_TIMETOGOLOW,
+  REG_TIMETOGOHIGH,
   REG_SOC,
   REG_FULL,
   REG_NUM_INPUT_REGISTERS
@@ -46,6 +46,7 @@ enum HOLDING_REGISTERS {
     REG_SHUNT_VALUE,
 
     //Missing yet are the other config parameters
+    REG_IDENTIFIER, // This register contains the ID 0xBF39D
     REG_SET_SOC,
     REG_NUM_HOLDING_REGISTERS
 };
@@ -57,31 +58,37 @@ uint16_t inputGetter(uint16_t address)
 
   switch (regNum) {
     case REG_Voltage:
-      return (uint16_t)(gBattery.voltage()*100);
+      return (uint16_t)(gBattery.voltage()*100.0f);
       break;
     case REG_CURRENT:
-      return (uint16_t)(gBattery.current()*100);
+      return (uint16_t)(gBattery.current()*100.0f);
       break;
     case REG_POWER_LOW:
-      return (uint16_t)(gBattery.voltage()*gBattery.current()*10);
+      return (uint16_t)(gBattery.voltage()*gBattery.current()*10.0f);
       break;
     case REG_POWER_HIGH:
-      return (uint16_t) (((uint32)(gBattery.voltage()*gBattery.current()*10))>>16);
+      return (uint16_t) (((uint32)(gBattery.voltage()*gBattery.current()*10.0f))>>16);
       break;
+    case REG_ENERGY_LOW:
+        return (uint16_t)0;
+       break;
+    case REG_ENERGY_HIGH:
+        return (uint16_t)0;
+        break;
     case REG_HIGH_VOLTAGE_ALARM_STATUS:
-      return 0; // Not yet implemented
+      return (uint16_t)0; // Not yet implemented
       break;
     case REG_LOW_VOLTAGE_ALARM_STATUS:
-      return 0; // Not yet implemented
+      return (uint16_t)0; // Not yet implemented
+      break;    
+    case REG_TIMETOGOLOW:
+      return (uint16_t) (gBattery.tTg());
       break;
-    case REG_IDENTIFIER:
-      return (uint16_t)0x93FB;
-      break;
-    case REG_TIMETOGO:
-      return (int16_t) gBattery.tTg();
+    case REG_TIMETOGOHIGH:
+      return (uint16_t) (((uint32)(gBattery.tTg()))>>16);
       break;
     case REG_SOC:
-      return gBattery.soc() * 100;
+      return (uint16_t)(gBattery.soc() * 10000);
       break;
     case REG_FULL:
       return gBattery.isFull();
@@ -108,11 +115,14 @@ uint16_t holdingGetter(uint16_t address)
       return (uint16_t)(gModbusId);
       break;
     case REG_SHUNT_VALUE:
-      return (uint16_t) (((uint32)(gBattery.voltage()*gBattery.current()*10))>>16);
+      return 2;
       break;
     case REG_SET_SOC:
         return inputGetter(REG_SOC);
         break;
+    case REG_IDENTIFIER:
+      return (uint16_t)0x93FB;
+      break;
     default:
       return UINT16_MAX;
   }

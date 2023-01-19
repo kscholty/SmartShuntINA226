@@ -7,7 +7,7 @@
 #include "sensorHandling.h"
 #include "statusHandling.h"
 
-
+static const float VoltageFactor = 2.93754; //3.17331;
 struct Shunt {
   float resistance;
   float maxCurrent;
@@ -269,7 +269,7 @@ void setupSensor() {
 }
 
 void sensorInit() {
-    Wire.begin();
+    Wire.begin(D2,D1); 
     attachInterrupt(digitalPinToInterrupt(D5), alert, FALLING);
 
     setupSensor();
@@ -318,7 +318,7 @@ void sensorLoop() {
     }
     
     if(now-lastUpdate > 1000) {        
-        gBattery.checkFull(ina.readBusVoltage());        
+        gBattery.checkFull(ina.readBusVoltage() * VoltageFactor);        
         gBattery.updateSOC();        
         gBattery.updateTtG();
         lastUpdate = now;
