@@ -88,6 +88,11 @@ uint16_t gMaxCurrentA;
 
 uint16_t gModbusId;
 
+bool gModbusEanbled = false;
+
+bool gVictronEanbled = true;
+
+
 
 // -- We can add a legend to the separator
 IotWebConf iotWebConf(thingName, &dnsServer, &server, wifiInitialApPassword, CONFIG_VERSION);
@@ -184,6 +189,19 @@ iotwebconf::UIntTParameter<uint16_t> modbusId =
   placeholder("1..128").
   build();
 
+static const char protocolValues[][STRING_LEN] = { "m", "v", "n" };
+static const char protocolNames[][STRING_LEN] = { "Modbus", "Victron", "None" };
+
+
+iotwebconf::SelectTParameter<STRING_LEN> protocolChooserParam =
+   iotwebconf::Builder<iotwebconf::SelectTParameter<STRING_LEN>>("prot").
+   label("Communication protocol").
+   optionValues((const char*)protocolValues).
+   optionNames((const char*)protocolNames).
+   optionCount(sizeof(protocolValues) / STRING_LEN).
+   nameLength(STRING_LEN).
+   defaultValue("m").
+   build();
 
 void wifiSetShuntVals() {
     shuntResistance.value() = gShuntResistancemR;
@@ -237,6 +255,7 @@ void wifiSetup()
 
   sysConfGroup.addItem(&shuntResistance);
   sysConfGroup.addItem(&maxCurrent);
+  sysConfGroup.addItem(&protocolChooserParam);
 
   shuntGroup.addItem(&battCapacity);
   shuntGroup.addItem(&chargeEfficiency);
@@ -309,8 +328,10 @@ void handleRoot()
   s += "<title>INR based smart shunt</title></head><body>";
   
   s += "<br><br><b>Config Values</b> <ul>";
-  s += "<li>Shunt resistance  : "+String(gShuntResistancemR) + " m&#8486;";
-  s += "<li>Shunt max current : "+String(gMaxCurrentA) +" A";
+  s += "<li>Shunt resistance  : "+String(gShuntResistancemR,4) + " m&#8486;";
+  s += "<li>Shunt max current : "+String(gMaxCurrentA,3) +" A";
+  s += "<li>Modbus enabled    : "+String(gModbusEanbled?"true":"false");
+  s += "<li>Victron enabled   : "+String(gVictronEanbled?"true":"false");
   s += "<li>Batt capacity     : "+String(gCapacityAh) + " Ah";
   s += "<li>Batt efficiency   : "+String(gChargeEfficiencyPercent) + " %";
   s += "<li>Min soc           : "+String(gMinPercent) + " %";
@@ -324,11 +345,11 @@ void handleRoot()
   
   if (gSensorInitialized) {
     s += "<ul> <li>Battery Voltage: " + String(gBattery.voltage()) + " V";
-    s += "<li>Shunt current  : " + String(gBattery.current()) + " A";
-    s += "<li>Avg consumption: " + String(gBattery.averageCurrent()) + " A";
-    s += "<li>Battery soc    : " + String(gBattery.soc());
+    s += "<li>Shunt current  : " + String(gBattery.current(),3) + " A";
+    s += "<li>Avg consumption: " + String(gBattery.averageCurrent(),3) + " A";
+    s += "<li>Battery soc    : " + String(gBattery.soc(),3);
     s += "<li>Time to go     : " + String(gBattery.tTg()) + " s";
-    s += "<li>Battery full   : " + String(gBattery.isFull());
+    s += "<li>Battery full   : " + String(gBattery.isFull()?"true":"false");
     s += "</ul>";
   } else {
     s += "<br><div><font color=\"red\" size=+1><b>Sensor failure!</b></font></div><br>";
@@ -352,6 +373,8 @@ void convertParams() {
     gFullVoltagemV = fullVoltage.value();
     gFullDelayS = fullDelay.value();
     gModbusId = modbusId.value();
+    gModbusEanbled = strcmp(protocolChooserParam.value(),"m") == 0; 
+    gVictronEanbled = strcmp(protocolChooserParam.value(),"v") == 0; 
 }
 
 void configSaved()

@@ -6,6 +6,9 @@
         "ostream": "cpp",
         "random": "cpp",
         "memory": "cpp",
-        "tuple": "cpp"
+        "tuple": "cpp",
+        "iomanip": "cpp",
+        "istream": "cpp",
+        "sstream": "cpp"
     }
 }

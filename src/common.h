@@ -20,3 +20,5 @@ extern float gShuntResistancemR;
 extern uint16_t gMaxCurrentA;
 extern uint16_t gModbusId;
 extern bool gSensorInitialized;
+extern bool gModbusEanbled;
+extern bool gVictronEanbled;

@@ -202,34 +202,38 @@ void modbusInit()
   if (modbusServer)
   {
     delete modbusServer;
+    modbusServer = 0;
   }
-  
-  modbusServer = new ModbusRTU;
-  //Config Modbus IP
-  modbusServer->server(gModbusId);
-  modbusServer->cbEnable(true);
-  modbusServer->addIreg(0, 0, REG_NUM_INPUT_REGISTERS);
-  modbusServer->addHreg(0, 0, REG_NUM_HOLDING_REGISTERS);
-  modbusServer->onGet(IREG(0), getter, REG_NUM_INPUT_REGISTERS);
-  modbusServer->onGet(HREG(0), getter, REG_NUM_HOLDING_REGISTERS);
-  modbusServer->onSet(HREG(0), setter, REG_NUM_HOLDING_REGISTERS);
-  
-  modbusServer->begin(&Serial);
+
+  if (gModbusEanbled) {
+    Serial.updateBaudRate(9600);
+    
+    modbusServer = new ModbusRTU;
+    // Config Modbus RTU
+    modbusServer->server(gModbusId);
+    modbusServer->cbEnable(true);
+    modbusServer->addIreg(0, 0, REG_NUM_INPUT_REGISTERS);
+    modbusServer->addHreg(0, 0, REG_NUM_HOLDING_REGISTERS);
+    modbusServer->onGet(IREG(0), getter, REG_NUM_INPUT_REGISTERS);
+    modbusServer->onGet(HREG(0), getter, REG_NUM_HOLDING_REGISTERS);
+    modbusServer->onSet(HREG(0), setter, REG_NUM_HOLDING_REGISTERS);
+
+    modbusServer->begin(&Serial);
+  }
 }
 
 void modbusLoop()
 {
-
+  if (gModbusEanbled) {
     // poll for Modbus requests
     modbusServer->task();
-    if(saveConfig) {
-        saveConfig = false;
-        wifiStoreConfig();
-        // We already updated the sensor, 
-        // so it's not required to reload the 
-        // data into the sensor.
-        gParamsChanged = false;
+    if (saveConfig) {
+            saveConfig = false;
+            wifiStoreConfig();
+            // We already updated the sensor,
+            // so it's not required to reload the
+            // data into the sensor.
+            gParamsChanged = false;
     }
+  }
 }
-
-
