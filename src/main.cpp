@@ -27,12 +27,15 @@ void setup() {
 }
 
 void loop() {
- 
- wifiLoop();
- sensorLoop();
- modbusLoop();
- victronLoop();
-  
-gParamsChanged = false;
+
+    wifiLoop();
+    if (gParamsChanged) {
+        modbusInit();
+        victronInit();
+    }
+    sensorLoop();
+    modbusLoop();
+    victronLoop();
+    gParamsChanged = false;
 
 }

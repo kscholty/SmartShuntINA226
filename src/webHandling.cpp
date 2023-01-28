@@ -92,10 +92,10 @@ bool gModbusEanbled = false;
 
 bool gVictronEanbled = true;
 
-
+char gCustomName[64] = "INR SmartShunt";
 
 // -- We can add a legend to the separator
-IotWebConf iotWebConf(thingName, &dnsServer, &server, wifiInitialApPassword, CONFIG_VERSION);
+IotWebConf iotWebConf(gCustomName, &dnsServer, &server, wifiInitialApPassword, CONFIG_VERSION);
 
 IotWebConfParameterGroup sysConfGroup = IotWebConfParameterGroup("SysConf","Sensor");
 
@@ -178,7 +178,7 @@ iotwebconf::UIntTParameter<uint16_t> fullDelay =
   build();
 
 
-IotWebConfParameterGroup modbusGroup = IotWebConfParameterGroup("modbus","Modbus settings");
+IotWebConfParameterGroup communicationGroup = IotWebConfParameterGroup("comm","Communication settings");
 iotwebconf::UIntTParameter<uint16_t> modbusId =
   iotwebconf::Builder<iotwebconf::UIntTParameter<uint16_t>>("mbid").
   label("Modbus Id").
@@ -200,8 +200,14 @@ iotwebconf::SelectTParameter<STRING_LEN> protocolChooserParam =
    optionNames((const char*)protocolNames).
    optionCount(sizeof(protocolValues) / STRING_LEN).
    nameLength(STRING_LEN).
-   defaultValue("m").
+   defaultValue("v").
    build();
+
+iotwebconf::TextTParameter<64> nameParam =
+iotwebconf::Builder<iotwebconf::TextTParameter<sizeof(gCustomName)>>("name").
+label("Name").
+defaultValue(gCustomName).
+build();
 
 void wifiSetShuntVals() {
     shuntResistance.value() = gShuntResistancemR;
@@ -249,13 +255,10 @@ String s = "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" conte
 
 void wifiSetup()
 {
-  
-
   shuntResistance.customHtml = "min='0.001' max='10.0' step='0.001'";
 
   sysConfGroup.addItem(&shuntResistance);
   sysConfGroup.addItem(&maxCurrent);
-  sysConfGroup.addItem(&protocolChooserParam);
 
   shuntGroup.addItem(&battCapacity);
   shuntGroup.addItem(&chargeEfficiency);
@@ -264,8 +267,14 @@ void wifiSetup()
   fullGroup.addItem(&fullVoltage);
   fullGroup.addItem(&tailCurrent);
   fullGroup.addItem(&fullDelay);
-  
-  modbusGroup.addItem(&modbusId);
+
+  // communication settings
+
+  communicationGroup.addItem(&nameParam);
+  communicationGroup.addItem(&protocolChooserParam);
+  communicationGroup.addItem(&modbusId);
+
+
   
   iotWebConf.setStatusPin(STATUS_PIN);
   iotWebConf.setConfigPin(CONFIG_PIN);
@@ -273,7 +282,7 @@ void wifiSetup()
   iotWebConf.addParameterGroup(&sysConfGroup);
   iotWebConf.addParameterGroup(&shuntGroup);
   iotWebConf.addParameterGroup(&fullGroup);
-  iotWebConf.addParameterGroup(&modbusGroup);
+  iotWebConf.addParameterGroup(&communicationGroup);
 
   iotWebConf.setConfigSavedCallback(&configSaved);
   iotWebConf.setWifiConnectionCallback(&wifiConnected);
@@ -325,20 +334,21 @@ void handleRoot()
 
   String s = "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/>";
   s += "<meta http-equiv=\"refresh\" content=\"3; url=/\">";
-  s += "<title>INR based smart shunt</title></head><body>";
+  s += "<title>"+String(gCustomName)+"</title></head><body>";
   
   s += "<br><br><b>Config Values</b> <ul>";
-  s += "<li>Shunt resistance  : "+String(gShuntResistancemR,4) + " m&#8486;";
-  s += "<li>Shunt max current : "+String(gMaxCurrentA,3) +" A";
-  s += "<li>Modbus enabled    : "+String(gModbusEanbled?"true":"false");
-  s += "<li>Victron enabled   : "+String(gVictronEanbled?"true":"false");
-  s += "<li>Batt capacity     : "+String(gCapacityAh) + " Ah";
-  s += "<li>Batt efficiency   : "+String(gChargeEfficiencyPercent) + " %";
-  s += "<li>Min soc           : "+String(gMinPercent) + " %";
-  s += "<li>Tail current      : "+String(gTailCurrentmA) + " mA";
-  s += "<li>Batt full voltage : "+String(gFullVoltagemV) + " mV";
-  s += "<li>Batt full delay   : "+String(gFullDelayS) + " s";
-  s += "<li>Modbus ID         : "+String(gModbusId);
+  s += "<li>Shunt resistance  : " + String(gShuntResistancemR, 4) + " m&#8486;";
+  s += "<li>Shunt max current : " + String(gMaxCurrentA, 3) + " A";
+  s += "<li>Batt capacity     : " + String(gCapacityAh) + " Ah";
+  s += "<li>Batt efficiency   : " + String(gChargeEfficiencyPercent) + " %";
+  s += "<li>Min soc           : " + String(gMinPercent) + " %";
+  s += "<li>Tail current      : " + String(gTailCurrentmA) + " mA";
+  s += "<li>Batt full voltage : " + String(gFullVoltagemV) + " mV";
+  s += "<li>Batt full delay   : " + String(gFullDelayS) + " s";
+  s += "<li>Name              : " + String(gCustomName);
+  s += "<li>Modbus enabled    : " + String(gModbusEanbled ? "true" : "false");
+  s += "<li>Victron enabled   : " + String(gVictronEanbled ? "true" : "false");
+  s += "<li>Modbus ID         : " + String(gModbusId);
   s += "</ul><hr><br>";
 
   s += "<br><b>Dynamic Values</b>";
@@ -374,7 +384,8 @@ void convertParams() {
     gFullDelayS = fullDelay.value();
     gModbusId = modbusId.value();
     gModbusEanbled = strcmp(protocolChooserParam.value(),"m") == 0; 
-    gVictronEanbled = strcmp(protocolChooserParam.value(),"v") == 0; 
+    gVictronEanbled = strcmp(protocolChooserParam.value(), "v") == 0;
+    strcpy(gCustomName, nameParam.value());
 }
 
 void configSaved()

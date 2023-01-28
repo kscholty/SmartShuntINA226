@@ -10,9 +10,10 @@ BatteryStatus::BatteryStatus() {
     fullReachedAt = 0;
     lastSoc = socVal = 0;
     remainAs = 0;
-    consumedAs = 0;
     tTgVal = 0;
-    glidingAverageCurrent = 0;    
+    glidingAverageCurrent = 0;
+    lasStatUpdate = 0;
+    isSynced = false;
 }
 
 void BatteryStatus::setParameters(uint16_t capacityAh, uint16_t chargeEfficiencyPercent, uint16_t minPercent, uint16_t tailCurrentmA, uint16_t fullVoltagemV,uint16_t fullDelayS) 
@@ -69,21 +70,28 @@ void BatteryStatus::updateConsumption(float current, float period,
     }
     
     periodConsumption = (lastCurrent + current) / 2 * period * numPeriods;
-    
+
+    // Has to be in 0.01 kWh....
+    float consumption = periodConsumption / 3.6 / 1000 / 10 * lastVoltage;
     if (periodConsumption > 0) {
         // We are charging
-        periodConsumption *= chargeEfficiency;    
+        stats.amountChargedEnergy += consumption;
+        periodConsumption *= chargeEfficiency;
+    } else {
+        stats.sumApHDrawn += periodConsumption / -3.6;
+        stats.amountDischargedEnergy -= consumption;
     }
 
+    
     remainAs += periodConsumption;
-
-    if(remainAs > batteryCapacity) {
+    stats.consumedAs += periodConsumption;
+    
+    if (remainAs > batteryCapacity) {
         remainAs = batteryCapacity;
     } else if(remainAs < 0.0f) {
         remainAs = 0.0f;
     }
     
-    consumedAs -= periodConsumption;
     lastCurrent = current;
 }
 
@@ -95,10 +103,12 @@ float BatteryStatus::getAverageConsumption() {
         return 0;
     }
 }
-
-bool BatteryStatus::checkFull(float currVoltage) {    
+void BatteryStatus::setVoltage(float currVoltage) {
     lastVoltage = currVoltage;
-    if (currVoltage >= fullVoltage) {
+}
+
+bool BatteryStatus::checkFull() {
+    if (lastVoltage >= fullVoltage) {
         unsigned long now = millis();
         if(fullReachedAt == 0) {
             fullReachedAt = now;
@@ -110,7 +120,15 @@ bool BatteryStatus::checkFull(float currVoltage) {
             float current = getAverageConsumption();
             if (current > 0.0 && current < tailCurrent) {
                 // And here we are. 100 %
-                setBatterySoc(1.0);                
+                setBatterySoc(1.0);
+                if (!isSynced) {
+                    resetStats();
+                    isSynced = true;
+                }
+                stats.secsSinceLastFull = 0;
+                stats.numAutoSyncs++;
+                stats.lastDischarge = roundf(remainAs / 3.6);
+                stats.consumedAs = 0.0;
                 return true;
             }
        }
@@ -131,4 +149,40 @@ void BatteryStatus::setBatterySoc(float val) {
 }
 
 
+void BatteryStatus::resetStats() {
+    stats.deepestDischarge = remainAs / 3.6;
+}
+
+
+void BatteryStatus::updateStats(unsigned long now) {
+    int timeDeltaSec = (now - lasStatUpdate) / 1000;
+    lasStatUpdate = now;
+    if (timeDeltaSec < 0) {
+        // We had an overflow, so let's assume the last call was 1 sec ago (default interval)
+        timeDeltaSec = 1;
+    }
+    if (stats.secsSinceLastFull >= 0) {
+        stats.secsSinceLastFull += timeDeltaSec;
+    }
+
+
+    if (tTgVal != INFINITY) {
+        float mAh = stats.consumedAs / 3.6;
+        if (stats.deepestDischarge > mAh) {
+            stats.deepestDischarge = roundf(mAh);
+        }
+        
+        stats.lastDischarge = roundf(mAh);
+        stats.lastDischarge = stats.lastDischarge;
+    }
+    
+    if (stats.minBatVoltage > lastVoltage) {
+        stats.minBatVoltage = lastVoltage;
+    } else if (stats.maxBatVoltage < lastVoltage) {
+        stats.maxBatVoltage = lastVoltage;
+    }
+    
+
+    
+}
 

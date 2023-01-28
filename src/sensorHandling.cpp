@@ -303,7 +303,7 @@ void updateAhCounter() {
 void sensorLoop() {
     static unsigned long lastUpdate = 0;
     unsigned long now = millis();
-    
+
     if(!gSensorInitialized) {
         return;
     }
@@ -314,13 +314,15 @@ void sensorLoop() {
     }
 
     while (alertCounter && ina.isConversionReady()) {           
-        updateAhCounter();        
+        updateAhCounter();
+        gBattery.setVoltage(ina.readBusVoltage() * VoltageFactor);
     }
     
-    if(now-lastUpdate > 1000) {        
-        gBattery.checkFull(ina.readBusVoltage() * VoltageFactor);        
+    if (now - lastUpdate > 1000) {
+        gBattery.checkFull();        
         gBattery.updateSOC();        
         gBattery.updateTtG();
+        gBattery.updateStats(now);
         lastUpdate = now;
     }
 /*
