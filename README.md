@@ -24,7 +24,9 @@ The code assumes that you use a 470KOhm and a 1MOhm resistor, measuring across t
 
 The Constant 'static const float VoltageFactor'  can be used to calibrate your sensor. Set it to 1 and then simply divide the real battery voltage by the value the sensor shows. Currently this cannot be configured using the Web interface.
 
+The folloing image shows how to connect the parts.
+![Breadboard](https://github.com/kscholty/SmartShuntINA226/blob/master/Schema/SmartShunt_Steckplatine.png)
 
-
-
+I recommend using a Buck converter to create 5V for feeding the D1 Mini and the sensors. Make sure Battery - is connected to GND.
+Furthermore, you should use an isolated USB module to connect the D1 to the target. You can destroy your computer or Victron GSX if you connect it directly to the USB of the D1 Mini.
 
