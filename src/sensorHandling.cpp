@@ -1,7 +1,7 @@
 
 #include <Arduino.h>
-#include <INA226.h>
 #include <Wire.h>
+#include <INA226.h>
 
 #include "common.h"
 #include "sensorHandling.h"
