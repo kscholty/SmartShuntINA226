@@ -30,7 +30,7 @@ struct Statistics {
 
 class BatteryStatus {
 protected:
-    static const uint16_t GlidingAverageWindow = 30;
+    static const uint16_t GlidingAverageWindow = 60;
 public:
     BatteryStatus();
     ~BatteryStatus() {}
