@@ -46,7 +46,7 @@
 const char wifiInitialApPassword[] = "12345678";
 
 // -- Configuration specific key. The value should be modified if config structure was changed.
-#define CONFIG_VERSION "B1"
+#define CONFIG_VERSION "B2"
 
 // -- When CONFIG_PIN is pulled to ground on startup, the Thing will use the initial
 //      password to buld an AP. (E.g. in case of lost password)
@@ -88,17 +88,21 @@ uint16_t gMaxCurrentA;
 
 uint16_t gModbusId;
 
+bool gModbusEanbled = false;
+
+bool gVictronEanbled = true;
+
+char gCustomName[64] = "INR SmartShunt";
 
 // -- We can add a legend to the separator
-IotWebConf iotWebConf(thingName, &dnsServer, &server, wifiInitialApPassword, CONFIG_VERSION);
+IotWebConf iotWebConf(gCustomName, &dnsServer, &server, wifiInitialApPassword, CONFIG_VERSION);
 
 IotWebConfParameterGroup sysConfGroup = IotWebConfParameterGroup("SysConf","Sensor");
 
 iotwebconf::FloatTParameter shuntResistance =
    iotwebconf::Builder<iotwebconf::FloatTParameter>("shuntR").
    label("Shunt resistance [m&#8486;]").
-   defaultValue(0.75).
-   step(0.01).
+   defaultValue(0.75f).
    placeholder("e.g. 0.75").
    build();
 
@@ -106,8 +110,8 @@ iotwebconf::UIntTParameter<uint16_t> maxCurrent =
   iotwebconf::Builder<iotwebconf::UIntTParameter<uint16_t>>("maxA").
   label("Expected max current [A]").
   defaultValue(200).
-  min(1).
-  step(1).
+  min(1u).
+  step(1u).
   placeholder("1..65535").
   build();
 
@@ -174,7 +178,7 @@ iotwebconf::UIntTParameter<uint16_t> fullDelay =
   build();
 
 
-IotWebConfParameterGroup modbusGroup = IotWebConfParameterGroup("modbus","Modbus settings");
+IotWebConfParameterGroup communicationGroup = IotWebConfParameterGroup("comm","Communication settings");
 iotwebconf::UIntTParameter<uint16_t> modbusId =
   iotwebconf::Builder<iotwebconf::UIntTParameter<uint16_t>>("mbid").
   label("Modbus Id").
@@ -185,6 +189,25 @@ iotwebconf::UIntTParameter<uint16_t> modbusId =
   placeholder("1..128").
   build();
 
+static const char protocolValues[][STRING_LEN] = { "m", "v", "n" };
+static const char protocolNames[][STRING_LEN] = { "Modbus", "Victron", "None" };
+
+
+iotwebconf::SelectTParameter<STRING_LEN> protocolChooserParam =
+   iotwebconf::Builder<iotwebconf::SelectTParameter<STRING_LEN>>("prot").
+   label("Communication protocol").
+   optionValues((const char*)protocolValues).
+   optionNames((const char*)protocolNames).
+   optionCount(sizeof(protocolValues) / STRING_LEN).
+   nameLength(STRING_LEN).
+   defaultValue("v").
+   build();
+
+iotwebconf::TextTParameter<64> nameParam =
+iotwebconf::Builder<iotwebconf::TextTParameter<sizeof(gCustomName)>>("name").
+label("Name").
+defaultValue(gCustomName).
+build();
 
 void wifiSetShuntVals() {
     shuntResistance.value() = gShuntResistancemR;
@@ -217,9 +240,23 @@ void onSetSoc() {
     server.send(200, "text/html", SOC_RESPONSE);
 } 
 
+
+void handleSetRuntime() {
+String s = "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/>";  
+  s += "<title>Set runtime data</title></head><body>";
+  s += SOC_FORM;
+  s += "<UL><LI>Go to <a href='config'>configure page</a> to change configuration.";
+  s += "<LI>Go to <a href='/'>main page</a></UL>";
+
+  s += "</body></html>\n";
+
+  server.send(200, "text/html", s);
+}
+
 void wifiSetup()
 {
-  
+  shuntResistance.customHtml = "min='0.001' max='10.0' step='0.001'";
+
   sysConfGroup.addItem(&shuntResistance);
   sysConfGroup.addItem(&maxCurrent);
 
@@ -230,8 +267,14 @@ void wifiSetup()
   fullGroup.addItem(&fullVoltage);
   fullGroup.addItem(&tailCurrent);
   fullGroup.addItem(&fullDelay);
-  
-  modbusGroup.addItem(&modbusId);
+
+  // communication settings
+
+  communicationGroup.addItem(&nameParam);
+  communicationGroup.addItem(&protocolChooserParam);
+  communicationGroup.addItem(&modbusId);
+
+
   
   iotWebConf.setStatusPin(STATUS_PIN);
   iotWebConf.setConfigPin(CONFIG_PIN);
@@ -239,7 +282,7 @@ void wifiSetup()
   iotWebConf.addParameterGroup(&sysConfGroup);
   iotWebConf.addParameterGroup(&shuntGroup);
   iotWebConf.addParameterGroup(&fullGroup);
-  iotWebConf.addParameterGroup(&modbusGroup);
+  iotWebConf.addParameterGroup(&communicationGroup);
 
   iotWebConf.setConfigSavedCallback(&configSaved);
   iotWebConf.setWifiConnectionCallback(&wifiConnected);
@@ -257,7 +300,8 @@ void wifiSetup()
   server.on("/", handleRoot);
   server.on("/config", [] { iotWebConf.handleConfig(); });
   server.onNotFound([]() { iotWebConf.handleNotFound(); });
-
+  
+  server.on("/setruntime", handleSetRuntime);
   server.on("/setsoc",HTTP_POST,onSetSoc);
 }
 
@@ -289,34 +333,40 @@ void handleRoot()
   }
 
   String s = "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/>";
-
-  s += "<title>INR based smart shunt</title></head><body>";
+  s += "<meta http-equiv=\"refresh\" content=\"3; url=/\">";
+  s += "<title>"+String(gCustomName)+"</title></head><body>";
   
   s += "<br><br><b>Config Values</b> <ul>";
-  s += "<li>Shunt resistance  : "+String(gShuntResistancemR) + " m&#8486;";
-  s += "<li>Shunt max current : "+String(gMaxCurrentA) +" A";
-  s += "<li>Batt capacity     : "+String(gCapacityAh) + " Ah";
-  s += "<li>Batt efficiency   : "+String(gChargeEfficiencyPercent) + " %";
-  s += "<li>Min soc           : "+String(gMinPercent) + " %";
-  s += "<li>Tail current      : "+String(gTailCurrentmA) + " mA";
-  s += "<li>Batt full voltage : "+String(gFullVoltagemV) + " mV";
-  s += "<li>Batt full delay   : "+String(gFullDelayS) + " s";
-  s += "<li>Modbus ID         : "+String(gModbusId);
+  s += "<li>Shunt resistance  : " + String(gShuntResistancemR, 4) + " m&#8486;";
+  s += "<li>Shunt max current : " + String(gMaxCurrentA, 3) + " A";
+  s += "<li>Batt capacity     : " + String(gCapacityAh) + " Ah";
+  s += "<li>Batt efficiency   : " + String(gChargeEfficiencyPercent) + " %";
+  s += "<li>Min soc           : " + String(gMinPercent) + " %";
+  s += "<li>Tail current      : " + String(gTailCurrentmA) + " mA";
+  s += "<li>Batt full voltage : " + String(gFullVoltagemV) + " mV";
+  s += "<li>Batt full delay   : " + String(gFullDelayS) + " s";
+  s += "<li>Name              : " + String(gCustomName);
+  s += "<li>Modbus enabled    : " + String(gModbusEanbled ? "true" : "false");
+  s += "<li>Victron enabled   : " + String(gVictronEanbled ? "true" : "false");
+  s += "<li>Modbus ID         : " + String(gModbusId);
   s += "</ul><hr><br>";
-  
-  s += "<br><b>Dynamic Values</b> <ul>";
-  s += "<li>Battery Voltage: "+String(gBattery.voltage()) + " V";
-  s += "<li>Shunt current  : "+String(gBattery.current()) + " A";
-  s += "<li>Avg consumption: "+String(gBattery.averageCurrent()) + " A";
-  s += "<li>Battery soc    : "+String(gBattery.soc()) ;
-  s += "<li>Time to go     : "+String(gBattery.tTg())+ " s";
-  s += "<li>Battery full   : "+String(gBattery.isFull());
-  s += "</ul>";
 
-  // The input for SOC
-  s += SOC_FORM;
+  s += "<br><b>Dynamic Values</b>";
   
-  s += "Go to <a href='config'>configure page</a> to change configuration.";
+  if (gSensorInitialized) {
+    s += "<ul> <li>Battery Voltage: " + String(gBattery.voltage()) + " V";
+    s += "<li>Shunt current  : " + String(gBattery.current(),3) + " A";
+    s += "<li>Avg consumption: " + String(gBattery.averageCurrent(),3) + " A";
+    s += "<li>Battery soc    : " + String(gBattery.soc(),3);
+    s += "<li>Time to go     : " + String(gBattery.tTg()) + " s";
+    s += "<li>Battery full   : " + String(gBattery.isFull()?"true":"false");
+    s += "</ul>";
+  } else {
+    s += "<br><div><font color=\"red\" size=+1><b>Sensor failure!</b></font></div><br>";
+  }
+  
+  s += "<UL><LI>Go to <a href='config'>configure page</a> to change configuration.";
+  s += "<LI>Go to <a href='setruntime'>runtime modification page</a> to change runtime data.</UL>";
   s += "</body></html>\n";
 
   server.send(200, "text/html", s);
@@ -333,6 +383,9 @@ void convertParams() {
     gFullVoltagemV = fullVoltage.value();
     gFullDelayS = fullDelay.value();
     gModbusId = modbusId.value();
+    gModbusEanbled = strcmp(protocolChooserParam.value(),"m") == 0; 
+    gVictronEanbled = strcmp(protocolChooserParam.value(), "v") == 0;
+    strcpy(gCustomName, nameParam.value());
 }
 
 void configSaved()

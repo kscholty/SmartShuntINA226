@@ -4,6 +4,20 @@
         "unordered_map": "cpp",
         "numeric": "cpp",
         "ostream": "cpp",
-        "random": "cpp"
+        "random": "cpp",
+        "memory": "cpp",
+        "tuple": "cpp",
+        "iomanip": "cpp",
+        "istream": "cpp",
+        "sstream": "cpp",
+        "optional": "cpp",
+        "system_error": "cpp",
+        "array": "cpp",
+        "functional": "cpp",
+        "type_traits": "cpp",
+        "utility": "cpp"
+    },
+    "[cpp]": {
+        "editor.defaultFormatter": "ms-vscode.cpptools"
     }
 }
