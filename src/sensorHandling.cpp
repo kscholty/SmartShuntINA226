@@ -7,6 +7,19 @@
 #include "sensorHandling.h"
 #include "statusHandling.h"
 
+#if CONFIG_IDF_TARGET_ESP32S2
+#define PIN_SCL SCL
+#define PIN_SDA SDA
+#define PIN_INTERRUPT 7
+#elif defined(ESP8266)
+#define PIN_SCL D1
+#define PIN_SDA D2
+#define PIN_INTERRUPT D5
+#else
+#error "Unknown Device"
+#endif
+
+
 static const float VoltageFactor = 2.93754; //3.17331;
 struct Shunt {
   float resistance;
@@ -94,141 +107,141 @@ uint16_t translateSampleCount(ina226_averages_t value) {
 
 #ifdef DEBUG_SENSOR
 void checkConfig() {
-    Serial.print("Mode:                  ");
+    SERIAL_DBG_DBG.print("Mode:                  ");
     switch (ina.getMode()) {
         case INA226_MODE_POWER_DOWN:
-        Serial.println("Power-Down");
+        SERIAL_DBG.println("Power-Down");
         break;
         case INA226_MODE_SHUNT_TRIG:
-        Serial.println("Shunt Voltage, Triggered");
+        SERIAL_DBG.println("Shunt Voltage, Triggered");
         break;
         case INA226_MODE_BUS_TRIG:
-        Serial.println("Bus Voltage, Triggered");
+        SERIAL_DBG.println("Bus Voltage, Triggered");
         break;
         case INA226_MODE_SHUNT_BUS_TRIG:
-        Serial.println("Shunt and Bus, Triggered");
+        SERIAL_DBG.println("Shunt and Bus, Triggered");
         break;
         case INA226_MODE_ADC_OFF:
-        Serial.println("ADC Off");
+        SERIAL_DBG.println("ADC Off");
         break;
         case INA226_MODE_SHUNT_CONT:
-        Serial.println("Shunt Voltage, Continuous");
+        SERIAL_DBG.println("Shunt Voltage, Continuous");
         break;
         case INA226_MODE_BUS_CONT:
-        Serial.println("Bus Voltage, Continuous");
+        SERIAL_DBG.println("Bus Voltage, Continuous");
         break;
         case INA226_MODE_SHUNT_BUS_CONT:
-        Serial.println("Shunt and Bus, Continuous");
+        SERIAL_DBG.println("Shunt and Bus, Continuous");
         break;
         default:
-        Serial.println("unknown");
+        SERIAL_DBG.println("unknown");
     }
 
-    Serial.print("Samples average:       ");
+    SERIAL_DBG.print("Samples average:       ");
     switch (ina.getAverages()) {
         case INA226_AVERAGES_1:
-        Serial.println("1 sample");
+        SERIAL_DBG.println("1 sample");
         break;
         case INA226_AVERAGES_4:
-        Serial.println("4 samples");
+        SERIAL_DBG.println("4 samples");
         break;
         case INA226_AVERAGES_16:
-        Serial.println("16 samples");
+        SERIAL_DBG.println("16 samples");
         break;
         case INA226_AVERAGES_64:
-        Serial.println("64 samples");
+        SERIAL_DBG.println("64 samples");
         break;
         case INA226_AVERAGES_128:
-        Serial.println("128 samples");
+        SERIAL_DBG.println("128 samples");
         break;
         case INA226_AVERAGES_256:
-        Serial.println("256 samples");
+        SERIAL_DBG.println("256 samples");
         break;
         case INA226_AVERAGES_512:
-        Serial.println("512 samples");
+        SERIAL_DBG.println("512 samples");
         break;
         case INA226_AVERAGES_1024:
-        Serial.println("1024 samples");
+        SERIAL_DBG.println("1024 samples");
         break;
         default:
-        Serial.println("unknown");
+        SERIAL_DBG.println("unknown");
     }
 
-    Serial.print("Bus conversion time:   ");
+    SERIAL_DBG.print("Bus conversion time:   ");
     switch (ina.getBusConversionTime()) {
         case INA226_BUS_CONV_TIME_140US:
-        Serial.println("140uS");
+        SERIAL_DBG.println("140uS");
         break;
         case INA226_BUS_CONV_TIME_204US:
-        Serial.println("204uS");
+        SERIAL_DBG.println("204uS");
         break;
         case INA226_BUS_CONV_TIME_332US:
-        Serial.println("332uS");
+        SERIAL_DBG.println("332uS");
         break;
         case INA226_BUS_CONV_TIME_588US:
-        Serial.println("558uS");
+        SERIAL_DBG.println("558uS");
         break;
         case INA226_BUS_CONV_TIME_1100US:
-        Serial.println("1.100ms");
+        SERIAL_DBG.println("1.100ms");
         break;
         case INA226_BUS_CONV_TIME_2116US:
-        Serial.println("2.116ms");
+        SERIAL_DBG.println("2.116ms");
         break;
         case INA226_BUS_CONV_TIME_4156US:
-        Serial.println("4.156ms");
+        SERIAL_DBG.println("4.156ms");
         break;
         case INA226_BUS_CONV_TIME_8244US:
-        Serial.println("8.244ms");
+        SERIAL_DBG.println("8.244ms");
         break;
         default:
-        Serial.println("unknown");
+        SERIAL_DBG.println("unknown");
     }
 
-    Serial.print("Shunt conversion time: ");
+    SERIAL_DBG.print("Shunt conversion time: ");
     switch (ina.getShuntConversionTime()) {
         case INA226_SHUNT_CONV_TIME_140US:
-        Serial.println("140uS");
+        SERIAL_DBG.println("140uS");
         break;
         case INA226_SHUNT_CONV_TIME_204US:
-        Serial.println("204uS");
+        SERIAL_DBG.println("204uS");
         break;
         case INA226_SHUNT_CONV_TIME_332US:
-        Serial.println("332uS");
+        SERIAL_DBG.println("332uS");
         break;
         case INA226_SHUNT_CONV_TIME_588US:
-        Serial.println("558uS");
+        SERIAL_DBG.println("558uS");
         break;
         case INA226_SHUNT_CONV_TIME_1100US:
-        Serial.println("1.100ms");
+        SERIAL_DBG.println("1.100ms");
         break;
         case INA226_SHUNT_CONV_TIME_2116US:
-        Serial.println("2.116ms");
+        SERIAL_DBG.println("2.116ms");
         break;
         case INA226_SHUNT_CONV_TIME_4156US:
-        Serial.println("4.156ms");
+        SERIAL_DBG.println("4.156ms");
         break;
         case INA226_SHUNT_CONV_TIME_8244US:
-        Serial.println("8.244ms");
+        SERIAL_DBG.println("8.244ms");
         break;
         default:
-        Serial.println("unknown");
+        SERIAL_DBG.println("unknown");
     }
 
-    Serial.print("Max possible current:  ");
-    Serial.print(ina.getMaxPossibleCurrent());
-    Serial.println(" A");
+    SERIAL_DBG.print("Max possible current:  ");
+    SERIAL_DBG.print(ina.getMaxPossibleCurrent());
+    SERIAL_DBG.println(" A");
 
-    Serial.print("Max current:           ");
-    Serial.print(ina.getMaxCurrent());
-    Serial.println(" A");
+    SERIAL_DBG.print("Max current:           ");
+    SERIAL_DBG.print(ina.getMaxCurrent());
+    SERIAL_DBG.println(" A");
 
-    Serial.print("Max shunt voltage:     ");
-    Serial.print(ina.getMaxShuntVoltage());
-    Serial.println(" V");
+    SERIAL_DBG.print("Max shunt voltage:     ");
+    SERIAL_DBG.print(ina.getMaxShuntVoltage());
+    SERIAL_DBG.println(" V");
 
-    Serial.print("Max power:             ");
-    Serial.print(ina.getMaxPower());
-    Serial.println(" W");
+    SERIAL_DBG.print("Max power:             ");
+    SERIAL_DBG.print(ina.getMaxPower());
+    SERIAL_DBG.println(" W");
 
 }
 #endif
@@ -249,7 +262,7 @@ void setupSensor() {
 
     // Check if the connection was successful, stop if not
     if (!gSensorInitialized) {
-        Serial.println("Connection to sensor failed");
+        SERIAL_DBG.println("Connection to sensor failed");
         
     }
     // Configure INA226
@@ -269,8 +282,8 @@ void setupSensor() {
 }
 
 void sensorInit() {
-    Wire.begin(D2,D1); 
-    attachInterrupt(digitalPinToInterrupt(D5), alert, FALLING);
+    Wire.begin(PIN_SDA,PIN_SCL); 
+    attachInterrupt(digitalPinToInterrupt(PIN_INTERRUPT), alert, FALLING);
 
     setupSensor();
 
@@ -293,10 +306,10 @@ void updateAhCounter() {
 
     //float shuntVoltage = ina.readShuntVoltage();
     float current = ina.readShuntCurrent();
-    //Serial.printf("current is: %.2f\n",current);
+    //SERIAL_DBG.printf("current is: %.2f\n",current);
     gBattery.updateConsumption(current,sampleTime,count);
     if(count > 1) {
-        Serial.printf("Overflow %d\n",count);
+        SERIAL_DBG.printf("Overflow %d\n",count);
     } 
 }
 
@@ -326,22 +339,22 @@ void sensorLoop() {
         lastUpdate = now;
     }
 /*
-     Serial.print("Bus voltage:   ") ;
-    Serial.print(ina.readBusVoltage(), 7);
-    Serial.println(" V");
+     SERIAL_DBG.print("Bus voltage:   ") ;
+    SERIAL_DBG.print(ina.readBusVoltage(), 7);
+    SERIAL_DBG.println(" V");
 
-    Serial.print("Bus power:     ");
-    Serial.print(ina.readBusPower(), 7);
-    Serial.println(" W");
+    SERIAL_DBG.print("Bus power:     ");
+    SERIAL_DBG.print(ina.readBusPower(), 7);
+    SERIAL_DBG.println(" W");
 
-    Serial.print("Shunt voltage: ");
-    Serial.print(ina.readShuntVoltage(), 7);
-    Serial.println(" V");
+    SERIAL_DBG.print("Shunt voltage: ");
+    SERIAL_DBG.print(ina.readShuntVoltage(), 7);
+    SERIAL_DBG.println(" V");
 
-    Serial.print("Shunt current: ");
-    Serial.print(ina.readShuntCurrent(), 7);
-    Serial.println(" A");
+    SERIAL_DBG.print("Shunt current: ");
+    SERIAL_DBG.print(ina.readShuntCurrent(), 7);
+    SERIAL_DBG.println(" A");
 
-    Serial.println("");
+    SERIAL_DBG.println("");
 */    
 }

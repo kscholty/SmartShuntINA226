@@ -7,7 +7,7 @@
 // This is a SmartShunt 500A
 static const uint16_t PID = 0xA389;
 static const uint16_t AppId = 0b0100000100100000;  // 0x4120
-static const unsigned long UART_TIMEOUT = 1000;
+static const unsigned long UART_TIMEOUT = 900;
 
 
 static unsigned long lastHexCmdMillis = 0;
@@ -51,16 +51,16 @@ enum FLAGS {
 
 void sendAnswer(uint8_t* bytes, uint8_t count) {
     uint8_t checksum = bytes[0];
-    Serial.write(':');
+    SERIAL_VICTRON.write(':');
     // This is the command, just 1 nibble
-    Serial.printf("%hhX", bytes[0]);
+    SERIAL_VICTRON.printf("%hhX", bytes[0]);
     for (int i = 1; i < count; ++i) {
         checksum += bytes[i];
-        Serial.printf("%02hhX", bytes[i]);
+        SERIAL_VICTRON.printf("%02hhX", bytes[i]);
     }
     checksum = 0x55 - checksum;
-    Serial.printf("%02hhX", checksum);
-    Serial.write('\n');
+    SERIAL_VICTRON.printf("%02hhX", checksum);
+    SERIAL_VICTRON.write('\n');
 }
 
 typedef void (*CommandFunc)(uint8_t, uint16_t, uint8_t, uint8_t*, uint8_t);
@@ -104,8 +104,13 @@ void commandGet(uint8_t command, uint16_t address, uint8_t flags, uint8_t*,
         case 0x034F:
             aSize = 5;
             break;
-        case 0x010A:            
+        case 0x010A:
+#if ESP32
+            sprintf(serialnr, "%08X", ESP.getEfuseMac());
+#else
             sprintf(serialnr, "%08X", ESP.getChipId());
+#endif
+            
             len = strlen(serialnr);
             aSize = 4 + len;
             memcpy(answer + 4, serialnr, len);
@@ -122,7 +127,7 @@ void commandGet(uint8_t command, uint16_t address, uint8_t flags, uint8_t*,
             break;
         default:
             answer[3] = FLAG_UNKNOWN_ID;
-            // Serial.printf("Unknown GET address 0x%X\r\n",address);
+            // SERIAL_DBG.printf("Unknown GET address 0x%X\r\n",address);
             break;
     }
 
@@ -167,8 +172,8 @@ CommandFunc commandHandlers[] = {
 
 void victronInit() {
     if (gVictronEanbled) {
-        if (Serial.baudRate() != 19200) {
-            Serial.updateBaudRate(19200);
+        if (SERIAL_VICTRON.baudRate() != 19200) {
+            SERIAL_VICTRON.updateBaudRate(19200); 
         }
     }
 }
@@ -213,8 +218,8 @@ void sendSmallBlock() {
     S += "\r\nChecksum\t";
 
     uint8_t cs = calcChecksum(S);
-    Serial.write(S.c_str());
-    Serial.write(cs);
+    SERIAL_VICTRON.write(S.c_str());
+    SERIAL_VICTRON.write(cs);
 }
 
 void sendHistoryBlock() {
@@ -245,8 +250,8 @@ void sendHistoryBlock() {
 
     S += "\r\nChecksum\t";
     uint8_t cs = calcChecksum(S);
-    Serial.write(S.c_str());
-    Serial.write(cs);
+    SERIAL_VICTRON.write(S.c_str());
+    SERIAL_VICTRON.write(cs);
 }
 
 #define char2int(VAL) ((VAL) > '@' ? ((VAL) & 0xDF) - 'A' + 10 : (VAL) - '0')
@@ -254,20 +259,20 @@ void sendHistoryBlock() {
 bool readByte(uint8_t& value) {
     char result[2];
     int read;
-    read = Serial.readBytes(result,1);
+    read = SERIAL_VICTRON.readBytes(result,1);
     if (read == 1) {
         if (result[0] < '0') {
             value = (uint8_t)result[0];
             return true;
         }
-        read = Serial.readBytes(result+1,1);
+        read = SERIAL_VICTRON.readBytes(result+1,1);
         if (read == 1) {
             value = (uint8_t)((char2int(result[0]) << 4) | char2int(result[1]));
             return true;
         }
     }
 
-    Serial.printf("readByte: Read failure read %d %c %c\r\n", read, result[0], result[1]);
+    SERIAL_DBG.printf("readByte: Read failure read %d %c %c\r\n", read, result[0], result[1]);
     return false;
 }
 
@@ -285,15 +290,15 @@ void rxData(unsigned long now) {
     bool ok;
 
     while (true) {
-        //Serial.printf("Status is: %d\r\n",status);
-       /* if (status != IDLE && (now - lastHexCmdMillis > UART_TIMEOUT)) {
+        //SERIAL_DBG.printf("Status is: %d\r\n",status);
+        if (status != IDLE && (now - lastHexCmdMillis > UART_TIMEOUT)) {
             status = IDLE;
             lastHexCmdMillis = 0;
-        }*/
+        }
 
         switch (status) {
             case IDLE:
-                inbyte = Serial.read();
+                inbyte = SERIAL_VICTRON.read();
 
                 if (inbyte == ':') {
                     lastHexCmdMillis = now;
@@ -306,7 +311,7 @@ void rxData(unsigned long now) {
                 }
                 return;
             case READ_COMMAND:
-                inbyte = Serial.read();
+                inbyte = SERIAL_VICTRON.read();
                 command = char2int(inbyte);
                 checksum += command;
                 if (command < NUM_COMMANDS) {
@@ -358,7 +363,7 @@ void rxData(unsigned long now) {
                 // Fall through                
             case READ_DATA:                       
                 ok = readByte(valueBuffer[currIndex]);
-                //Serial.printf("Read %X\r\n", valueBuffer[currIndex]);
+                //SERIAL_DBG.printf("Read %X\r\n", valueBuffer[currIndex]);
                 if (ok) {
                     if (valueBuffer[currIndex] == '\r') {                        
                         return;
@@ -383,7 +388,7 @@ void rxData(unsigned long now) {
                     }
                 } else {
                     // Error while reading from UART
-                    ///Serial.printf("Read failed (ix %d, checksum %x)\r\n",currIndex,checksum);
+                    ///SERIAL_DBG.printf("Read failed (ix %d, checksum %x)\r\n",currIndex,checksum);
                     status = IDLE;
                 }
                 return;
@@ -392,14 +397,14 @@ void rxData(unsigned long now) {
                 if (!ok || (uint8_t)(checksum + inbyte) != 0x55) {
                     // Checksum failure
                     // Just ignore this
-                     //Serial.printf("Ok: %d Checksum failure %X MY sum is %X\r\n",ok,inbyte,checksum);
+                     //SERIAL_DBG.printf("Ok: %d Checksum failure %X MY sum is %X\r\n",ok,inbyte,checksum);
                     status = IDLE;
                 } else {
                     status = COMPLETE;
                 }
                 return;
             case COMPLETE:
-                inbyte = Serial.read();
+                inbyte = SERIAL_VICTRON.read();
                 if (inbyte == '\r') return;
                 if (inbyte == '\n') {
                     status = EXECUTE;
@@ -436,16 +441,16 @@ void victronLoop() {
     now = millis();
 
     if (gVictronEanbled) {
-        while (Serial.available()) {
+        while (SERIAL_VICTRON.available()) {
             rxData(now);
         }
 
-        stopText = (lastHexCmdMillis > 0) && (now - lastHexCmdMillis < 2000);
-        if (!stopText && (now - lastSent > 1000)) {
+        stopText = (lastHexCmdMillis > 0) && (now - lastHexCmdMillis < 1000);
+        if (!stopText && (now - lastSent >= 990)) {
             sendSmallBlock();
             lastSent = now;
             lastHexCmdMillis = 0;
-            if (now - lastSentHistory > 10000) {
+            if (now - lastSentHistory >= 9900) {
                 sendHistoryBlock();
                 lastSentHistory = now;
             }

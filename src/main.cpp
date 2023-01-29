@@ -18,10 +18,20 @@
 
 
 void setup() {
-  Serial.begin(19200,SERIAL_8N1);
-
+#if ARDUINO_USB_CDC_ON_BOOT
+    SERIAL_VICTRON.begin(19200,SERIAL_8N1,RX,TX);
+    SERIAL_DBG.begin(115200);
+#else
+    SERIAL_DBG.begin(19200);
+#endif
+    
     wifiSetup();
-    sensorInit();    
+
+#if (SOC_UART_NUM > 1)
+    SERIAL_MODBUS.begin(9600, SERIAL_8N2);
+#endif
+
+    sensorInit();
     modbusInit();
     victronInit();
 }

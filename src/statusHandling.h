@@ -9,6 +9,7 @@ struct Statistics {
     Statistics() {
         memset(this, 0, sizeof(*this));
         secsSinceLastFull = -1;
+        minBatVoltage = INT32_MAX;
     }
     float consumedAs;
     unsigned int deepestDischarge;

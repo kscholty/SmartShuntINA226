@@ -23,3 +23,23 @@ extern bool gModbusEanbled;
 extern bool gVictronEanbled;
 
 extern char gCustomName[64];
+
+
+
+#define SERIAL_DBG Serial
+
+#if ARDUINO_USB_CDC_ON_BOOT
+// This means that we have a Serial 
+// and a Serial0
+#define SERIAL_VICTRON Serial0
+#else
+#define SERIAL_VICTRON Serial
+#endif
+#if SOC_UART_NUM == 1
+#define SERIAL_MODBUS SERIAL_VICTRON
+#elif SOC_UART_NUM == 2
+#define SERIAL_MODBUS Serial1
+#else
+#define SERIAL_MODBUS SERIAL_VICTRON
+#endif
+

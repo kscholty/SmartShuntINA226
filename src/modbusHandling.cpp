@@ -67,7 +67,7 @@ uint16_t inputGetter(uint16_t address)
       return (uint16_t)(gBattery.voltage()*gBattery.current()*10.0f);
       break;
     case REG_POWER_HIGH:
-      return (uint16_t) (((uint32)(gBattery.voltage()*gBattery.current()*10.0f))>>16);
+      return (uint16_t) (((uint32_t)(gBattery.voltage()*gBattery.current()*10.0f))>>16);
       break;
     case REG_ENERGY_LOW:
         return (uint16_t)0;
@@ -85,7 +85,7 @@ uint16_t inputGetter(uint16_t address)
       return (uint16_t) (gBattery.tTg());
       break;
     case REG_TIMETOGOHIGH:
-      return (uint16_t) (((uint32)(gBattery.tTg()))>>16);
+      return (uint16_t) (((uint32_t)(gBattery.tTg()))>>16);
       break;
     case REG_SOC:
       return (uint16_t)(gBattery.soc() * 10000);
@@ -206,34 +206,35 @@ void modbusInit()
   }
 
   if (gModbusEanbled) {
-    Serial.updateBaudRate(9600);
-    
-    modbusServer = new ModbusRTU;
-    // Config Modbus RTU
-    modbusServer->server(gModbusId);
-    modbusServer->cbEnable(true);
-    modbusServer->addIreg(0, 0, REG_NUM_INPUT_REGISTERS);
-    modbusServer->addHreg(0, 0, REG_NUM_HOLDING_REGISTERS);
-    modbusServer->onGet(IREG(0), getter, REG_NUM_INPUT_REGISTERS);
-    modbusServer->onGet(HREG(0), getter, REG_NUM_HOLDING_REGISTERS);
-    modbusServer->onSet(HREG(0), setter, REG_NUM_HOLDING_REGISTERS);
+      if (SERIAL_MODBUS.baudRate() != 9600) {
+          SERIAL_MODBUS.updateBaudRate(9600);
+      }
 
-    modbusServer->begin(&Serial);
+      modbusServer = new ModbusRTU;
+      // Config Modbus RTU
+      modbusServer->server(gModbusId);
+      modbusServer->cbEnable(true);
+      modbusServer->addIreg(0, 0, REG_NUM_INPUT_REGISTERS);
+      modbusServer->addHreg(0, 0, REG_NUM_HOLDING_REGISTERS);
+      modbusServer->onGet(IREG(0), getter, REG_NUM_INPUT_REGISTERS);
+      modbusServer->onGet(HREG(0), getter, REG_NUM_HOLDING_REGISTERS);
+      modbusServer->onSet(HREG(0), setter, REG_NUM_HOLDING_REGISTERS);
+
+      modbusServer->begin(&SERIAL_MODBUS);
   }
 }
 
-void modbusLoop()
-{
-  if (gModbusEanbled) {
-    // poll for Modbus requests
-    modbusServer->task();
-    if (saveConfig) {
+void modbusLoop() {
+    if (gModbusEanbled) {
+        // poll for Modbus requests
+        modbusServer->task();
+        if (saveConfig) {
             saveConfig = false;
             wifiStoreConfig();
             // We already updated the sensor,
             // so it's not required to reload the
             // data into the sensor.
             gParamsChanged = false;
+        }
     }
-  }
 }

@@ -1,11 +1,14 @@
 
 
-#define DEBUG_WIFI(m) Serial.print(m)
+#define DEBUG_WIFI(m) SERIAL_DBG.print(m)
 
 #include <Arduino.h>
 #include <ArduinoOTA.h>
-
+#if ESP32
+#include <WiFi.h>
+#else
 #include <ESP8266WiFi.h>      
+#endif
 
 #include <time.h>
 //needed for library
@@ -56,6 +59,11 @@ const char wifiInitialApPassword[] = "12345678";
 //      First it will light up (kept LOW), on Wifi connection it will blink,
 //      when connected to the Wifi it will turn off (kept HIGH).
 #define STATUS_PIN LED_BUILTIN
+#if ESP32 
+#define ON_LEVEL HIGH
+#else
+#define ON_LEVEL LOW
+#endif
 
 // -- Method declarations.
 void handleRoot();
@@ -276,7 +284,7 @@ void wifiSetup()
 
 
   
-  iotWebConf.setStatusPin(STATUS_PIN);
+  iotWebConf.setStatusPin(STATUS_PIN,ON_LEVEL);
   iotWebConf.setConfigPin(CONFIG_PIN);
 
   iotWebConf.addParameterGroup(&sysConfGroup);

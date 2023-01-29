@@ -25,7 +25,7 @@ void BatteryStatus::setParameters(uint16_t capacityAh, uint16_t chargeEfficiency
         fullVoltage = fullVoltagemV;
         minAs = minPercent * batteryCapacity / 100.0f;
         fullDelay = ((unsigned long)fullDelayS) *1000;    
-        //Serial.printf("Init values: Capacity %.3f, efficiency %.3f, fullDelay %ld, \n",batteryCapacity,chargeEfficiency,fullDelay);
+        //SERIAL_DBG.printf("Init values: Capacity %.3f, efficiency %.3f, fullDelay %ld, \n",batteryCapacity,chargeEfficiency,fullDelay);
 
 }
 
@@ -173,13 +173,14 @@ void BatteryStatus::updateStats(unsigned long now) {
         }
         
         stats.lastDischarge = roundf(mAh);
-        stats.lastDischarge = stats.lastDischarge;
+        stats.averageDischarge = stats.lastDischarge;
     }
     
     if (stats.minBatVoltage > lastVoltage) {
-        stats.minBatVoltage = lastVoltage;
-    } else if (stats.maxBatVoltage < lastVoltage) {
-        stats.maxBatVoltage = lastVoltage;
+        stats.minBatVoltage = lastVoltage*1000;
+    }
+    if (stats.maxBatVoltage < lastVoltage) {
+        stats.maxBatVoltage = lastVoltage*1000;
     }
     
 
