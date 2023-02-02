@@ -69,10 +69,10 @@ void BatteryStatus::updateConsumption(float current, float period,
         lastCurrent = current;
     }
     
-    periodConsumption = (lastCurrent + current) / 2 * period * numPeriods;
+    periodConsumption = (lastCurrent + current) / 2.0 * period * numPeriods;
 
     // Has to be in 0.01 kWh....
-    float consumption = periodConsumption / 3.6 / 1000 / 10 * lastVoltage;
+    float consumption = periodConsumption / 3.6 / 1000.0 / 10.0 * lastVoltage;
     if (periodConsumption > 0) {
         // We are charging
         stats.amountChargedEnergy += consumption;

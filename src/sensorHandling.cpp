@@ -322,7 +322,7 @@ void sensorLoop() {
     }
 
     if(gParamsChanged) {
-        ina.calibrate(gShuntResistancemR / 1000, gMaxCurrentA);    
+        ina.calibrate(gShuntResistancemR / 1000.0, gMaxCurrentA);    
         gBattery.setParameters(gCapacityAh,gChargeEfficiencyPercent,gMinPercent,gTailCurrentmA,gFullVoltagemV,gFullDelayS);
     }
 
@@ -331,7 +331,7 @@ void sensorLoop() {
         gBattery.setVoltage(ina.readBusVoltage() * VoltageFactor);
     }
     
-    if (now - lastUpdate > 1000) {
+    if (now - lastUpdate >= UPDATE_INTERVAL) {
         gBattery.checkFull();        
         gBattery.updateSOC();        
         gBattery.updateTtG();

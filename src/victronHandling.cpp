@@ -445,12 +445,12 @@ void victronLoop() {
             rxData(now);
         }
 
-        stopText = (lastHexCmdMillis > 0) && (now - lastHexCmdMillis < 1000);
-        if (!stopText && (now - lastSent >= 990)) {
+        stopText = (lastHexCmdMillis > 0) && (now - lastHexCmdMillis < UPDATE_INTERVAL);
+        if (!stopText && (now - lastSent >= UPDATE_INTERVAL)) {
             sendSmallBlock();
             lastSent = now;
             lastHexCmdMillis = 0;
-            if (now - lastSentHistory >= 9900) {
+            if (now - lastSentHistory >= UPDATE_INTERVAL * 10) {
                 sendHistoryBlock();
                 lastSentHistory = now;
             }

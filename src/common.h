@@ -24,6 +24,7 @@ extern bool gVictronEanbled;
 
 extern char gCustomName[64];
 
+#define UPDATE_INTERVAL 990
 
 
 #define SERIAL_DBG Serial
@@ -42,4 +43,3 @@ extern char gCustomName[64];
 #else
 #define SERIAL_MODBUS SERIAL_VICTRON
 #endif
-
