@@ -110,7 +110,7 @@ The sensor will always create that access point after startup. For how long can 
 ![Web config](/Schema/WebConfig.png)
 
 ## Everything soldered together
-[Prototype](/Schema/prototype.jpg)
+![Prototype](/Schema/prototype.jpg)
 
 
 
