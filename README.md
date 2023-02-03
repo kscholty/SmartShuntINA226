@@ -55,16 +55,19 @@ The following image shows how to connect the parts.
     The web interface is quite self explanatory. It contains values to configure the shunt you are using. 
     Furthermore some that have been inspired by the Victron SmartShunt. 
 2) Victron Text and Hex Protocols. These are decirbed on the  Victron Website and are mainly useful for connecting to Victron Cerbos or othe GX devices.
-3) The Modbus interface
+3)  The Modbus interface
     The Modbus interface uses 9600 Buad 8N2. The following registers are exposed
-    a) Holding registers (the first 4 are the ones from a PZEM-017)
-        0: High Voltage alarm Thrshold (not functional at the moment)
-        1: Low Voltage alarm Thrshold (not functional at the moment)
+    - Holding registers (the first 4 are the ones from a PZEM-017)
+    ```
+        0: High Voltage alarm Threshold (not functional at the moment)
+        1: Low Voltage alarm Threshold (not functional at the moment)
         2: Modbus Address
         3: Shunt Value (Refer to table below) what the values mean
         4: Identifier (This register contains the ID 0xBF39D to distinguish it from other sensors)
         5: Set SOC (Can be used to set an SOC, e.g. after startup)
-    b) Input Registers (again the first 8 are identical to the PZEM-017, however, here the current and POwers can be negative)
+    ```
+    - Input Registers (again the first 8 are identical to the PZEM-017, however, here the current and POwers can be negative)
+    ```
         0: Bus Voltage
         1: Current
         2: PowerLow (power low word)
@@ -77,7 +80,7 @@ The following image shows how to connect the parts.
         9: TimeToGoHigh (HighWord of timeToGo in Seconds)
         10: SOC (Soc in %)
         11: isFull (1 if battery is detected to be full, 0 otherwise)
-
+    ```
 
 Shunt values for modbus, assumed is a voltage of 75mV at nominal current. 
 The values are those used by PZEM-017.
