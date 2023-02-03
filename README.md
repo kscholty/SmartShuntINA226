@@ -7,7 +7,7 @@ The smart shunt has three main interfaces.
 
 1) A web interface for human users. It allows setting the main parameters of the system and displays the current status of the system
 2) A modbus interface that is based on a PZEM017 energy meter but enhances it with the values mentioned above
-3) Victron VE.direct Text and Hex protocols in order to function as a Battery Monitor. The Hex protocol is only implemnented as far as it's required for startup. Also some fields of the Text protocol are not yet filled correctly.
+3) Victron VE.direct Text and Hex protocols in order to function as a Battery Monitor. The Hex protocol is only implemented as far as it's required for startup. Furthermore, some fields of the Text protocol are not yet filled correctly.
 
 ## Building the code yourself
 The Software has been created using platformio and the Arduino environment. In order to build it you als need some libraries.
