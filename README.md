@@ -98,6 +98,19 @@ After connecting to that access point, direct your browser to `http://192.168.4.
 The sensor will always create that access point after startup. For how long can be configured. 
 
 
+## Screenshots
+
+## Remote console with Shunt
+![Console1](/Schema/RemoteConsoleMain.png)
+
+## Remote console details
+![Console2](/Schema/RemoteConsoleDevice.png)
+
+## Web config
+![Web config](/Schema/WebConfig.png)
+
+## Everything soldered together
+[Prototype](/Schema/prototype.jpg)
 
 
 
