@@ -5,7 +5,7 @@ The INA226 should be connected to the shunt so that charges going into the batte
 
 The smart shunt has three main interfaces.
 
-1) A web interface for human users. It allows setting the main parameters of the system and disoplays the current status of the system
+1) A web interface for human users. It allows setting the main parameters of the system and displays the current status of the system
 2) A modbus interface that is based on a PZEM017 energy meter but enhances it with the values mentioned above
 3) Victron VE.direct Text and Hex protocols in order to function as a Battery Monitor. The Hex protocol is only implemnented as far as it's required for startup. Also some fields of the Text protocol are not yet filled correctly.
 
