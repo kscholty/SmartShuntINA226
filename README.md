@@ -66,7 +66,7 @@ The following image shows how to connect the parts.
         4: Identifier (This register contains the ID 0xBF39D to distinguish it from other sensors)
         5: Set SOC (Can be used to set an SOC, e.g. after startup)
     ```
-    - Input Registers (again the first 8 are identical to the PZEM-017, however, here the current and POwers can be negative)
+    - Input Registers (again the first 8 are identical to the PZEM-017, however, here the current and power can be negative)
     ```
         0: Bus Voltage
         1: Current
@@ -74,8 +74,8 @@ The following image shows how to connect the parts.
         3: PowerHigh (power high word)
         4: EnergyLow (Energy low word)
         5: EnergyHigh (Energy high word)
-        6: HighVoltageAlarm status (Is high voltage alarem set, not yet functional)
-        7: LowVoltageAlarm status (Is high voltage alarem set, not yet functional)
+        6: HighVoltageAlarm status (Is high voltage alarm set, not yet functional)
+        7: LowVoltageAlarm status (Is high voltage alarm set, not yet functional)
         8: TimeToGoLow (LowWord of timeToGo in Seconds)
         9: TimeToGoHigh (HighWord of timeToGo in Seconds)
         10: SOC (Soc in %)
