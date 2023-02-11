@@ -2,18 +2,21 @@
 #include "statusHandling.h"
 
 
+
+
 BatteryStatus gBattery;
 
 
 BatteryStatus::BatteryStatus() {
     lastCurrent = 0;
     fullReachedAt = 0;
-    lastSoc = socVal = 0;
-    remainAs = 0;
-    tTgVal = 0;
+    lastSoc = 0;
     glidingAverageCurrent = 0;
     lasStatUpdate = 0;
     isSynced = false;
+    if (!readStatusFromRTC()) {
+        stats.init();
+    }
 }
 
 void BatteryStatus::setParameters(uint16_t capacityAh, uint16_t chargeEfficiencyPercent, uint16_t minPercent, uint16_t tailCurrentmA, uint16_t fullVoltagemV,uint16_t fullDelayS) 
@@ -30,20 +33,20 @@ void BatteryStatus::setParameters(uint16_t capacityAh, uint16_t chargeEfficiency
 }
 
 void BatteryStatus::updateSOC() {
-    socVal = remainAs / batteryCapacity;
-    if (fabs(lastSoc - socVal) >= .01) {
-        // Store value in EEPROM
-        //  N.i.
-        lastSoc = socVal;
+    stats.socVal = stats.remainAs / batteryCapacity;
+    if (fabs(lastSoc - stats.socVal) >= .01) {
+        // Store value in RTC memory
+        writeStatusToRTC();
+        lastSoc = stats.socVal;        
     }
 }
 
 void BatteryStatus::updateTtG() {
     float avgCurrent = getAverageConsumption();
     if (avgCurrent > 0.0) {
-        tTgVal = max(remainAs - minAs, 0.0f) / avgCurrent;
+        stats.tTgVal = max(stats.remainAs - minAs, 0.0f) / avgCurrent;
     }  else {
-        tTgVal = INFINITY;
+        stats.tTgVal = INFINITY;
     }
 }
 
@@ -83,13 +86,13 @@ void BatteryStatus::updateConsumption(float current, float period,
     }
 
     
-    remainAs += periodConsumption;
+    stats.remainAs += periodConsumption;
     stats.consumedAs += periodConsumption;
     
-    if (remainAs > batteryCapacity) {
-        remainAs = batteryCapacity;
-    } else if(remainAs < 0.0f) {
-        remainAs = 0.0f;
+    if (stats.remainAs > batteryCapacity) {
+        stats.remainAs = batteryCapacity;
+    } else if(stats.remainAs < 0.0f) {
+        stats.remainAs = 0.0f;
     }
     
     lastCurrent = current;
@@ -113,7 +116,7 @@ bool BatteryStatus::checkFull() {
         if(fullReachedAt == 0) {
             fullReachedAt = now;
             // This is just to indicate that we will be close to full
-            if (socVal < 0.95) { setBatterySoc(0.95); }
+            if (stats.socVal < 0.95) { setBatterySoc(0.95); }
         }
         unsigned long delay = now - fullReachedAt;
        if(delay >= fullDelay) {
@@ -127,7 +130,7 @@ bool BatteryStatus::checkFull() {
                 }
                 stats.secsSinceLastFull = 0;
                 stats.numAutoSyncs++;
-                stats.lastDischarge = roundf(remainAs / 3.6);
+                stats.lastDischarge = roundf(stats.remainAs / 3.6);
                 stats.consumedAs = 0.0;
                 return true;
             }
@@ -140,8 +143,8 @@ bool BatteryStatus::checkFull() {
         
 
 void BatteryStatus::setBatterySoc(float val) {
-    socVal = val;
-    remainAs = batteryCapacity * val;
+    stats.socVal = val;
+    stats.remainAs = batteryCapacity * val;
     if(val>=1.0) {
         fullReachedAt = millis();
     }
@@ -150,7 +153,7 @@ void BatteryStatus::setBatterySoc(float val) {
 
 
 void BatteryStatus::resetStats() {
-    stats.deepestDischarge = remainAs / 3.6;
+    stats.deepestDischarge = stats.remainAs / 3.6;
 }
 
 
@@ -166,7 +169,7 @@ void BatteryStatus::updateStats(unsigned long now) {
     }
 
 
-    if (tTgVal != INFINITY) {
+    if (stats.tTgVal != INFINITY) {
         float mAh = stats.consumedAs / 3.6;
         if (stats.deepestDischarge > mAh) {
             stats.deepestDischarge = roundf(mAh);
@@ -175,15 +178,50 @@ void BatteryStatus::updateStats(unsigned long now) {
         stats.lastDischarge = roundf(mAh);
         stats.averageDischarge = stats.lastDischarge;
     }
-    
-    if (stats.minBatVoltage > lastVoltage) {
-        stats.minBatVoltage = lastVoltage*1000;
-    }
-    if (stats.maxBatVoltage < lastVoltage) {
-        stats.maxBatVoltage = lastVoltage*1000;
-    }
-    
 
-    
+    uint32_t voltageV = lastVoltage * 1000;
+    if (stats.minBatVoltage > voltageV) {
+        stats.minBatVoltage = voltageV;
+    }
+    if (stats.maxBatVoltage < voltageV) {
+        stats.maxBatVoltage = voltageV;
+    }    
 }
 
+
+#ifdef ESP32
+RTC_DATA_ATTR Statistics rtcStats;
+
+void BatteryStatus::writeStatusToRTC() {
+    memcpy(&rtcStats, &stats, sizeof(stats));
+}
+
+bool BatteryStatus::readStatusFromRTC() {
+    bool res = true;
+    if (rtcStats.magic == MAGICKEY) {
+         memcpy(&stats, &rtcStats, sizeof(stats));
+    } else {
+        res = false;
+    }
+    return res;
+}
+
+#else 
+void BatteryStatus::writeStatusToRTC() {
+    ESP.rtcUserMemoryWrite(0, (uint32_t*)&stats, sizeof(stats));
+}
+
+bool BatteryStatus::readStatusFromRTC() {
+    uint32_t magic = 0;
+    if (!ESP.rtcUserMemoryRead(0, &magic, sizeof(magic)) || magic != MAGICKEY) {
+        return false;
+    }
+
+    if (!ESP.rtcUserMemoryRead(0, (uint32_t*)&stats.magic, sizeof(stats))) {
+        Serial.println("RTC read failed!");
+        return false;
+    }
+
+    return true;
+}
+#endif

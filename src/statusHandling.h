@@ -5,12 +5,19 @@
 #include <RingBuf.h>
 
 
+static const int MAGICKEY = 0x343332;
 struct Statistics {
-    Statistics() {
+    void init() {
         memset(this, 0, sizeof(*this));
         secsSinceLastFull = -1;
         minBatVoltage = INT32_MAX;
     }
+    const uint32_t magic = MAGICKEY;
+    // The following values are the main values we want
+    float socVal;
+    float remainAs;
+    float tTgVal;
+    // Here the statistics start
     float consumedAs;
     unsigned int deepestDischarge;
     unsigned int lastDischarge;
@@ -46,10 +53,10 @@ public:
 
     //Getters
     float tTg() {
-        return tTgVal;
+        return stats.tTgVal;
     }
     float soc() {
-        return socVal;
+        return stats.socVal;
     }
     bool isFull() {
         return (fullReachedAt != 0);
@@ -72,6 +79,8 @@ public:
         float getAverageConsumption();
         // This is called when we become synced for the first time;
         void resetStats();
+        void writeStatusToRTC();
+        bool readStatusFromRTC();
         RingBuf<float, GlidingAverageWindow> currentValues;
         float batteryCapacity;
         float chargeEfficiency; // Value between 0 and 1 (representing percent)       
@@ -82,10 +91,7 @@ public:
 
         float lastVoltage;
         float lastCurrent;        
-        unsigned long fullReachedAt;
-        float socVal;
-        float remainAs;
-        float tTgVal;
+        unsigned long fullReachedAt;        
         float glidingAverageCurrent;
         float lastSoc;
         unsigned long lasStatUpdate;
