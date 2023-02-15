@@ -24,8 +24,8 @@ void BatteryStatus::setParameters(uint16_t capacityAh, uint16_t chargeEfficiency
 
         batteryCapacity = ((float)capacityAh) *60.0f * 60.0f; // We use it in As
         chargeEfficiency = ((float)chargeEfficiencyPercent) / 100.0f;
-        tailCurrent = tailCurrentmA;
-        fullVoltage = fullVoltagemV;
+        tailCurrent = tailCurrentmA / 1000.0f;
+        fullVoltage = fullVoltagemV / 1000.0f;
         minAs = minPercent * batteryCapacity / 100.0f;
         fullDelay = ((unsigned long)fullDelayS) *1000;    
         //SERIAL_DBG.printf("Init values: Capacity %.3f, efficiency %.3f, fullDelay %ld, \n",batteryCapacity,chargeEfficiency,fullDelay);
@@ -34,7 +34,7 @@ void BatteryStatus::setParameters(uint16_t capacityAh, uint16_t chargeEfficiency
 
 void BatteryStatus::updateSOC() {
     stats.socVal = stats.remainAs / batteryCapacity;
-    if (fabs(lastSoc - stats.socVal) >= .01) {
+    if (fabs(lastSoc - stats.socVal) >= .005) {
         // Store value in RTC memory
         writeStatusToRTC();
         lastSoc = stats.socVal;        
@@ -112,16 +112,19 @@ void BatteryStatus::setVoltage(float currVoltage) {
 
 bool BatteryStatus::checkFull() {
     if (lastVoltage >= fullVoltage) {
-        unsigned long now = millis();
-        if(fullReachedAt == 0) {
-            fullReachedAt = now;
+        
+        if (stats.socVal < 0.95) {
             // This is just to indicate that we will be close to full
-            if (stats.socVal < 0.95) { setBatterySoc(0.95); }
+            setBatterySoc(0.95);
         }
-        unsigned long delay = now - fullReachedAt;
-       if(delay >= fullDelay) {
-            float current = getAverageConsumption();
-            if (current > 0.0 && current < tailCurrent) {
+        float current = -1 * getAverageConsumption();
+        if (current > 0.0 && current <= tailCurrent) {
+            unsigned long now = millis();
+            if (fullReachedAt == 0) {
+                fullReachedAt = now;
+            }
+            unsigned long delay = now - fullReachedAt;
+            if (delay >= fullDelay) {
                 // And here we are. 100 %
                 setBatterySoc(1.0);
                 if (!isSynced) {
@@ -134,13 +137,15 @@ bool BatteryStatus::checkFull() {
                 stats.consumedAs = 0.0;
                 return true;
             }
-       }
+        } else {
+            fullReachedAt = 0;
+        }
     } else {
-        fullReachedAt = 0;        
+        fullReachedAt = 0;
     }
     return false;
 }
-        
+
 
 void BatteryStatus::setBatterySoc(float val) {
     stats.socVal = val;
