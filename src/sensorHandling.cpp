@@ -20,8 +20,9 @@
 #endif
 
 
-static const float VoltageCalibrationFactor = 2.93754;
-static const float CurrentCalibrationFactor = 1.0285;
+static const float VoltageCalibrationFactor = 2.93892f;
+//static const float VoltageCalibrationFactor = 1.0f;
+static const float CurrentCalibrationFactor = 1.0285f;
 struct Shunt {
   float resistance;
   float maxCurrent;

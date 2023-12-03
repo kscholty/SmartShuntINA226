@@ -113,9 +113,9 @@ void BatteryStatus::setVoltage(float currVoltage) {
 bool BatteryStatus::checkFull() {
     if (lastVoltage >= fullVoltage) {
         
-        if (stats.socVal < 0.95) {
+        if (stats.socVal < 0.90) {
             // This is just to indicate that we will be close to full
-            setBatterySoc(0.95);
+            setBatterySoc(0.90);
         }
         float current = -1 * getAverageConsumption();
         if (current > 0.0 && current <= tailCurrent) {

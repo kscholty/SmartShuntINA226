@@ -211,7 +211,7 @@ iotwebconf::SelectTParameter<STRING_LEN> protocolChooserParam =
    defaultValue("v").
    build();
 
-iotwebconf::TextTParameter<64> nameParam =
+iotwebconf::TextTParameter<sizeof(gCustomName)> nameParam =
 iotwebconf::Builder<iotwebconf::TextTParameter<sizeof(gCustomName)>>("name").
 label("Name").
 defaultValue(gCustomName).
