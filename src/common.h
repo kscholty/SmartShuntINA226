@@ -16,11 +16,14 @@ extern uint16_t gTailCurrentmA;
 extern uint16_t gFullVoltagemV;
 extern uint16_t gFullDelayS;
 extern float gShuntResistancemR;
+extern float gVoltageCalibrationFactor;
+extern float gCurrentCalibrationFactor;
 extern uint16_t gMaxCurrentA;
 extern uint16_t gModbusId;
 extern bool gSensorInitialized;
 extern bool gModbusEanbled;
 extern bool gVictronEanbled;
+
 
 extern char gCustomName[64];
 

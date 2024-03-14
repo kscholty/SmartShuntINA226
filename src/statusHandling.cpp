@@ -111,7 +111,7 @@ void BatteryStatus::setVoltage(float currVoltage) {
 }
 
 bool BatteryStatus::checkFull() {
-    if (lastVoltage >= fullVoltage) {
+    if (lastVoltage - fullVoltage >= -0.05) {
         
         if (stats.socVal < 0.90) {
             // This is just to indicate that we will be close to full

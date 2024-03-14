@@ -20,9 +20,7 @@
 #endif
 
 
-static const float VoltageCalibrationFactor = 2.93892f;
-//static const float VoltageCalibrationFactor = 1.0f;
-static const float CurrentCalibrationFactor = 1.0285f;
+
 struct Shunt {
   float resistance;
   float maxCurrent;
@@ -307,7 +305,7 @@ void updateAhCounter() {
     interrupts();
 
     //float shuntVoltage = ina.readShuntVoltage();
-    float current = ina.readShuntCurrent() * CurrentCalibrationFactor;
+    float current = ina.readShuntCurrent() * gCurrentCalibrationFactor;
     //SERIAL_DBG.printf("current is: %.2f\n",current);
     gBattery.updateConsumption(current,sampleTime,count);
     if(count > 1) {
@@ -330,7 +328,7 @@ void sensorLoop() {
 
     while (alertCounter && ina.isConversionReady()) {           
         updateAhCounter();
-        gBattery.setVoltage(ina.readBusVoltage() * VoltageCalibrationFactor);
+        gBattery.setVoltage(ina.readBusVoltage() * gVoltageCalibrationFactor);
     }
     
     if (now - lastUpdate >= UPDATE_INTERVAL) {

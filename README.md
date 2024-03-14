@@ -43,7 +43,8 @@ A wide variety of shunts can be found on EBay or other platforms.
 If you have a 48V System, be aware of the fact that the INA226 does only support voltages up to 36V (40V max). You need a voltage divider to make shure your sensor is not destroyed. 
 The code assumes that you use a __470KOhm and a 1MOhm__ resistor, measuring across the 1MOhm towards GND. `( + --470K-- --1M -- GND )` This should work for a 16S LifePO4 battery. The smaller you choose the small resistor in comparison to the bigger one, the more accurate the measurement will be.
 
-The constant `static const float VoltageFactor`  can be used to calibrate your sensor. Set it to `1` and then simply divide the real battery voltage by the value the sensor shows. Currently this cannot be configured using the web interface.
+The configuration field `Voltage calibration factor` can be used to calibrate the voltage reading of the sensor. Set it to `1000` and then simply divide the real battery voltage by the value the sensor shows and multiply it by `1000`. 
+The same can be done for the current in the field `Current calibration factor`. If you entered the shunt resistance correctly, a value close to 1000 is expected here. Mine is 1028.5.
 
 The following image shows how to connect the parts.
 ![Breadboard](https://github.com/kscholty/SmartShuntINA226/blob/master/Schema/SmartShunt_Steckplatine.png)

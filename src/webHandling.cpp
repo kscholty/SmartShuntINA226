@@ -6,9 +6,13 @@
 #include <ArduinoOTA.h>
 #if ESP32
 #include <WiFi.h>
+// For ESP32 IotWebConf provides a drop-in replacement for UpdateServer.
+# include <IotWebConfESP32HTTPUpdateServer.h>
 #else
 #include <ESP8266WiFi.h>      
+# include <ESP8266HTTPUpdateServer.h>
 #endif
+
 
 #include <time.h>
 //needed for library
@@ -49,7 +53,7 @@
 const char wifiInitialApPassword[] = "12345678";
 
 // -- Configuration specific key. The value should be modified if config structure was changed.
-#define CONFIG_VERSION "B2"
+#define CONFIG_VERSION "C1"
 
 // -- When CONFIG_PIN is pulled to ground on startup, the Thing will use the initial
 //      password to buld an AP. (E.g. in case of lost password)
@@ -65,6 +69,7 @@ const char wifiInitialApPassword[] = "12345678";
 #define ON_LEVEL LOW
 #endif
 
+
 // -- Method declarations.
 void handleRoot();
 void convertParams();
@@ -75,6 +80,13 @@ bool formValidator(iotwebconf::WebRequestWrapper*);
 
 DNSServer dnsServer;
 WebServer server(80);
+
+#if ESP32
+HTTPUpdateServer httpUpdater;
+#else
+ESP8266HTTPUpdateServer httpUpdater;
+#endif
+
 
 bool gParamsChanged = true;
 
@@ -92,6 +104,10 @@ uint16_t gFullDelayS;
 
 float gShuntResistancemR;
 
+float gVoltageCalibrationFactor;
+
+float gCurrentCalibrationFactor;
+
 uint16_t gMaxCurrentA;
 
 uint16_t gModbusId;
@@ -100,7 +116,7 @@ bool gModbusEanbled = false;
 
 bool gVictronEanbled = true;
 
-char gCustomName[64] = "INR SmartShunt";
+char gCustomName[64] = "INR SmartShunt S2";
 
 // -- We can add a legend to the separator
 IotWebConf iotWebConf(gCustomName, &dnsServer, &server, wifiInitialApPassword, CONFIG_VERSION);
@@ -124,7 +140,23 @@ iotwebconf::UIntTParameter<uint16_t> maxCurrent =
   build();
 
 
-IotWebConfParameterGroup shuntGroup = IotWebConfParameterGroup("ShuntConf","Smart shunt");
+iotwebconf::FloatTParameter voltageFactor =
+   iotwebconf::Builder<iotwebconf::FloatTParameter>("voltageF").
+    label("Voltage calibration factor (*1000)").
+    defaultValue(2938.92f).
+    step(0.01).
+    placeholder("e.g. 2340.34").
+   build();
+
+iotwebconf::FloatTParameter currentFactor =
+   iotwebconf::Builder<iotwebconf::FloatTParameter>("currentF").
+    label("Current calibration factor (*1000)").
+    defaultValue(1028.5f).
+    step(0.01).
+    placeholder("e.g. 1100").
+   build();
+
+IotWebConfParameterGroup shuntGroup = IotWebConfParameterGroup("ShuntConf", "Smart shunt");
 
 iotwebconf::UIntTParameter<uint16_t> battCapacity =
   iotwebconf::Builder<iotwebconf::UIntTParameter<uint16_t>>("battAh").
@@ -220,6 +252,8 @@ build();
 void wifiSetShuntVals() {
     shuntResistance.value() = gShuntResistancemR;
     maxCurrent.value() = gMaxCurrentA;
+    voltageFactor.value() = gVoltageCalibrationFactor;
+    currentFactor.value() = gCurrentCalibrationFactor;
 }
 
 void wifiSetModbusId() {
@@ -267,6 +301,9 @@ void wifiSetup()
 
   sysConfGroup.addItem(&shuntResistance);
   sysConfGroup.addItem(&maxCurrent);
+  sysConfGroup.addItem(&voltageFactor);
+  sysConfGroup.addItem(&currentFactor);
+
 
   shuntGroup.addItem(&battCapacity);
   shuntGroup.addItem(&chargeEfficiency);
@@ -299,6 +336,10 @@ void wifiSetup()
   iotWebConf.setFormValidator(formValidator);
   iotWebConf.getApTimeoutParameter()->visible = true;
 
+  iotWebConf.setupUpdateServer(
+    [](const char* updatePath) { httpUpdater.setup(&server, updatePath); },
+      [](const char* userName, char* password) { httpUpdater.updateCredentials(userName, password); });
+  
   // -- Initializing the configuration.
   iotWebConf.init();
   
@@ -347,6 +388,8 @@ void handleRoot()
   s += "<br><br><b>Config Values</b> <ul>";
   s += "<li>Shunt resistance  : " + String(gShuntResistancemR, 4) + " m&#8486;";
   s += "<li>Shunt max current : " + String(gMaxCurrentA, 3) + " A";
+  s += "<li>VoltageCalibration: " + String(gVoltageCalibrationFactor, 5);
+  s += "<li>CurrentCalibration: " + String(gCurrentCalibrationFactor, 5);
   s += "<li>Batt capacity     : " + String(gCapacityAh) + " Ah";
   s += "<li>Batt efficiency   : " + String(gChargeEfficiencyPercent) + " %";
   s += "<li>Min soc           : " + String(gMinPercent) + " %";
@@ -383,6 +426,9 @@ void handleRoot()
 
 void convertParams() {
     gShuntResistancemR = shuntResistance.value();
+    gVoltageCalibrationFactor = voltageFactor.value() / 1000.0;
+    gCurrentCalibrationFactor = currentFactor.value() / 1000.0;
+
     gMaxCurrentA = maxCurrent.value();
     gCapacityAh = battCapacity.value();
     gChargeEfficiencyPercent = chargeEfficiency.value();

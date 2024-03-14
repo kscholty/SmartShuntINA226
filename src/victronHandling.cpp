@@ -161,6 +161,8 @@ void commandSet(uint8_t command, uint16_t address, uint8_t flags,
 
 void commandUnknown(uint8_t command, uint16_t, uint8_t, uint8_t*, uint8_t) {
     uint8_t answer[2] = { ANSWER_UNKNOWN, command };
+
+     SERIAL_DBG.printf("Unknown command: %d\r\n",command);
     // Unknown command received
     sendAnswer(answer, sizeof(answer));
 }
@@ -299,7 +301,7 @@ void rxData(unsigned long now) {
         switch (status) {
             case IDLE:
                 inbyte = SERIAL_VICTRON.read();
-
+                //SERIAL_DBG.printf("%x\r\n",inbyte); 
                 if (inbyte == ':') {
                     lastHexCmdMillis = now;
                     // A new command starts
@@ -388,7 +390,7 @@ void rxData(unsigned long now) {
                     }
                 } else {
                     // Error while reading from UART
-                    ///SERIAL_DBG.printf("Read failed (ix %d, checksum %x)\r\n",currIndex,checksum);
+                    SERIAL_DBG.printf("Read failed (ix %d, checksum %x)\r\n",currIndex,checksum);
                     status = IDLE;
                 }
                 return;
@@ -397,7 +399,7 @@ void rxData(unsigned long now) {
                 if (!ok || (uint8_t)(checksum + inbyte) != 0x55) {
                     // Checksum failure
                     // Just ignore this
-                     //SERIAL_DBG.printf("Ok: %d Checksum failure %X MY sum is %X\r\n",ok,inbyte,checksum);
+                     SERIAL_DBG.printf("Ok: %d Checksum failure %X MY sum is %X\r\n",ok,inbyte,checksum);
                     status = IDLE;
                 } else {
                     status = COMPLETE;
@@ -442,15 +444,18 @@ void victronLoop() {
 
     if (gVictronEanbled) {
         while (SERIAL_VICTRON.available()) {
+            //SERIAL_DBG.println("Data available");
             rxData(now);
         }
 
-        stopText = (lastHexCmdMillis > 0) && (now - lastHexCmdMillis < UPDATE_INTERVAL);
+        stopText = ((lastHexCmdMillis > 0) && (now - lastHexCmdMillis < UPDATE_INTERVAL));
         if (!stopText && (now - lastSent >= UPDATE_INTERVAL)) {
+            SERIAL_DBG.print(".");
             sendSmallBlock();
             lastSent = now;
             lastHexCmdMillis = 0;
             if (now - lastSentHistory >= UPDATE_INTERVAL * 10) {
+                SERIAL_DBG.println("*");
                 sendHistoryBlock();
                 lastSentHistory = now;
             }
