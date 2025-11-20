@@ -109,10 +109,10 @@ The sensor will always create that access point after startup. For how long can 
 ![Console2](/Schema/RemoteConsoleDevice.png)
 
 ## Remote console details for DC system
-![Console2](/Schema/RemoteConsoleDCSystem.jpg)
+![ConsoleDC](/Schema/RemoteConsoleDCSystem.jpg)
 
 ## Real setup with SmartShunt as a DC System
-![Console2](/Schema/RemoteConsoleDCSystemExample.png)
+![ConsoleReal](/Schema/RemoteConsoleDCSystemExample.jpg)
 
 ## Web config
 ![Web config](/Schema/WebConfig.png)
