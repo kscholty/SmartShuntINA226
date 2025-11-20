@@ -216,7 +216,7 @@ void sendSmallBlock() {
     S += "\r\nAR\t0";
     S += "\r\nBMV\tINR226";
     S += "\r\nFW\t" + String(AppId, 16);
-    S += "\r\nMON\t0" ;
+    S += "\r\nMON\t" + String(gVictronDevice) ;
     S += "\r\nChecksum\t";
 
     uint8_t cs = calcChecksum(S);
