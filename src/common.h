@@ -24,7 +24,7 @@ extern bool gSensorInitialized;
 extern bool gModbusEanbled;
 extern bool gVictronEanbled;
 
-
+extern char gVictronDevice[3];
 extern char gCustomName[64];
 
 #define UPDATE_INTERVAL 990
