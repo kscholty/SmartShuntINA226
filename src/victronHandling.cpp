@@ -6,7 +6,11 @@
 
 // This is a SmartShunt 500A
 static const uint16_t PID = 0xA389;
-static const uint16_t AppId = 0b0100000100100000;  // 0x4120
+
+// This is interpreted as the firmware version by the Victron app.
+// If you are annoyed by update offers in the app,
+// you can change this to the latest available version
+static const uint16_t AppId = 0b0000010000011001;  // 0x0419
 static const unsigned long UART_TIMEOUT = 900;
 
 
