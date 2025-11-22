@@ -56,7 +56,8 @@ The following image shows how to connect the parts.
     The web interface is quite self explanatory. It contains values to configure the shunt you are using. 
     Furthermore some that have been inspired by the Victron SmartShunt. 
 2) Victron Text and Hex Protocols. These are decirbed on the  Victron Website and are mainly useful for connecting to Victron Cerbos or othe GX devices.
-3)  The Modbus interface
+    Victron Device Type allow to declare Smart Shunt as a monitor for external load or supply: DC load, wind/water turbine, car alternator...
+4)  The Modbus interface
     The Modbus interface uses 9600 Buad 8N2. The following registers are exposed
     - Holding registers (the first 4 are the ones from a PZEM-017)
     ```
@@ -107,8 +108,18 @@ The sensor will always create that access point after startup. For how long can 
 ## Remote console details
 ![Console2](/Schema/RemoteConsoleDevice.png)
 
+## Remote console details for DC system
+![ConsoleDC](/Schema/RemoteConsoleDCSystem.jpg)
+
+## Real setup with SmartShunt as a DC System
+![ConsoleReal](/Schema/RemoteConsoleDCSystemExample.jpg)
+
 ## Web config
 ![Web config](/Schema/WebConfig.png)
+
+## Web config for Victron Device Type
+![Web config DC](/Schema/WebConfigDeviceType.png)
+
 
 ## Everything soldered together
 ![Prototype](/Schema/prototype.jpg)

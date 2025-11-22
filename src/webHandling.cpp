@@ -116,6 +116,8 @@ bool gModbusEanbled = false;
 
 bool gVictronEanbled = true;
 
+char gVictronDevice[3] = "0";
+
 char gCustomName[64] = "INR SmartShunt S2";
 
 // -- We can add a legend to the separator
@@ -232,6 +234,9 @@ iotwebconf::UIntTParameter<uint16_t> modbusId =
 static const char protocolValues[][STRING_LEN] = { "m", "v", "n" };
 static const char protocolNames[][STRING_LEN] = { "Modbus", "Victron", "None" };
 
+static const char victronTypeValues[][STRING_LEN] = { "-9", "-8", "-7", "-6", "-5", "-4", "-3", "-2", "-1", "0", "1", "2", "3", "4", "5", "6", "7", "8" };
+static const char victronTypeNames[][STRING_LEN] = { "Solar charger", "Wind turbine", "Shaft generator", "Alternator", "Fuel cell", "Water generator", "DC/DC charger", "AC charger", "Generic source", "Battery monitor (BMV)", "Generic load", "Electric drive", "Fridge", "Water pump", "Bilge pump", "DC system", "Inverter", "Water heater" };
+
 
 iotwebconf::SelectTParameter<STRING_LEN> protocolChooserParam =
    iotwebconf::Builder<iotwebconf::SelectTParameter<STRING_LEN>>("prot").
@@ -241,6 +246,16 @@ iotwebconf::SelectTParameter<STRING_LEN> protocolChooserParam =
    optionCount(sizeof(protocolValues) / STRING_LEN).
    nameLength(STRING_LEN).
    defaultValue("v").
+   build();
+
+iotwebconf::SelectTParameter<STRING_LEN> victronDeviceChooserParam =
+   iotwebconf::Builder<iotwebconf::SelectTParameter<STRING_LEN>>("vicdev").
+   label("Victron device type").
+   optionValues((const char*)victronTypeValues).
+   optionNames((const char*)victronTypeNames).
+   optionCount(sizeof(victronTypeValues) / STRING_LEN).
+   nameLength(STRING_LEN).
+   defaultValue("0").
    build();
 
 iotwebconf::TextTParameter<sizeof(gCustomName)> nameParam =
@@ -317,6 +332,7 @@ void wifiSetup()
 
   communicationGroup.addItem(&nameParam);
   communicationGroup.addItem(&protocolChooserParam);
+  communicationGroup.addItem(&victronDeviceChooserParam);
   communicationGroup.addItem(&modbusId);
 
 
@@ -399,6 +415,7 @@ void handleRoot()
   s += "<li>Name              : " + String(gCustomName);
   s += "<li>Modbus enabled    : " + String(gModbusEanbled ? "true" : "false");
   s += "<li>Victron enabled   : " + String(gVictronEanbled ? "true" : "false");
+  s += "<li>Victron dev. type : " + String(victronTypeNames[atoi(gVictronDevice)+9]);
   s += "<li>Modbus ID         : " + String(gModbusId);
   s += "</ul><hr><br>";
 
@@ -440,6 +457,8 @@ void convertParams() {
     gModbusEanbled = strcmp(protocolChooserParam.value(),"m") == 0; 
     gVictronEanbled = strcmp(protocolChooserParam.value(), "v") == 0;
     strcpy(gCustomName, nameParam.value());
+    strcpy(gVictronDevice, victronDeviceChooserParam.value());
+
 }
 
 void configSaved()
