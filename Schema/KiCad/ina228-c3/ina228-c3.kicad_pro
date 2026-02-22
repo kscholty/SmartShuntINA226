@@ -38,8 +38,8 @@
         "other_text_upright": false,
         "pads": {
           "drill": 0.0,
-          "height": 2.2,
-          "width": 0.83
+          "height": 0.95,
+          "width": 0.9
         },
         "silk_line_width": 0.1,
         "silk_text_italic": false,
@@ -68,7 +68,88 @@
           "width": 0.5
         }
       ],
-      "drc_exclusions": [],
+      "drc_exclusions": [
+        [
+          "clearance|153425000|87725000|16545b25-6f27-454d-a0fb-4183266b98df|9d5d224c-a6da-440b-8fc1-9519b8f951c5",
+          ""
+        ],
+        [
+          "clearance|154075000|86800000|3f7aeece-b96b-4531-ac97-4f1e1b30d620|9d5d224c-a6da-440b-8fc1-9519b8f951c5",
+          ""
+        ],
+        [
+          "clearance|154075000|87650000|79848f9c-5780-423b-9dd3-70e9b6915af8|9d5d224c-a6da-440b-8fc1-9519b8f951c5",
+          ""
+        ],
+        [
+          "drill_out_of_range|156775000|72135000|0d94a970-88f7-4dfb-81c3-c21c047437a8|00000000-0000-0000-0000-000000000000",
+          ""
+        ],
+        [
+          "drill_out_of_range|156775000|73235000|b84467b2-5bb6-4e53-864d-7430b20a0106|00000000-0000-0000-0000-000000000000",
+          ""
+        ],
+        [
+          "drill_out_of_range|157325000|71585000|c4b9919a-78a2-47a8-a5b5-b5a05db43176|00000000-0000-0000-0000-000000000000",
+          ""
+        ],
+        [
+          "drill_out_of_range|157325000|72685000|3bc0c344-328c-4784-ac30-83b01fa7547c|00000000-0000-0000-0000-000000000000",
+          ""
+        ],
+        [
+          "drill_out_of_range|157325000|73785000|76d6f415-8faf-4383-bbce-6bd33529e9fb|00000000-0000-0000-0000-000000000000",
+          ""
+        ],
+        [
+          "drill_out_of_range|157875000|72135000|75404f22-ab56-44cb-b26d-5aef5fc073ec|00000000-0000-0000-0000-000000000000",
+          ""
+        ],
+        [
+          "drill_out_of_range|157875000|73235000|a5b4a377-9554-4141-998e-1e0eead78ec0|00000000-0000-0000-0000-000000000000",
+          ""
+        ],
+        [
+          "drill_out_of_range|158425000|71585000|d1bddc3b-0766-468e-8411-1bf95c8fe7ba|00000000-0000-0000-0000-000000000000",
+          ""
+        ],
+        [
+          "drill_out_of_range|158425000|72685000|b8f4fdda-2268-46d7-8e57-996bb23fc127|00000000-0000-0000-0000-000000000000",
+          ""
+        ],
+        [
+          "drill_out_of_range|158425000|73785000|f13d58a7-e74d-4286-a728-880ffda01874|00000000-0000-0000-0000-000000000000",
+          ""
+        ],
+        [
+          "drill_out_of_range|158975000|72135000|36ed879f-7387-40b4-a5f7-3fbe54959863|00000000-0000-0000-0000-000000000000",
+          ""
+        ],
+        [
+          "drill_out_of_range|158975000|73235000|d3ffccd7-bdf8-46b8-8831-aa93dff7079a|00000000-0000-0000-0000-000000000000",
+          ""
+        ],
+        [
+          "footprint_filters_mismatch|121755000|83725000|82d6fa20-7839-4581-b901-9cb0ad29c33d|00000000-0000-0000-0000-000000000000",
+          ""
+        ],
+        [
+          "silk_edge_clearance|118105000|90535000|972197a2-7d23-436f-a62f-7621c9a3a973|54e4c547-25d0-4a36-818a-f6f0001d663c",
+          ""
+        ],
+        [
+          "silk_edge_clearance|145725000|90500000|972197a2-7d23-436f-a62f-7621c9a3a973|2f1f7b57-bb31-40c0-8759-84103dda9b34",
+          ""
+        ],
+        [
+          "silk_edge_clearance|69000000|65955000|972197a2-7d23-436f-a62f-7621c9a3a973|b38e006f-31e0-46c1-a1e9-65883b290e5d",
+          ""
+        ],
+        [
+          "silk_edge_clearance|69000000|74895000|972197a2-7d23-436f-a62f-7621c9a3a973|c58c4ce8-54d6-40e0-b7d3-25c0f80ccde9",
+          ""
+        ]
+      ],
       "meta": {
         "version": 2
       },
@@ -86,9 +167,9 @@
         "duplicate_footprints": "warning",
         "extra_footprint": "warning",
         "footprint": "error",
-        "footprint_filters_mismatch": "ignore",
+        "footprint_filters_mismatch": "warning",
         "footprint_symbol_mismatch": "warning",
-        "footprint_type_mismatch": "ignore",
+        "footprint_type_mismatch": "warning",
         "hole_clearance": "error",
         "hole_to_hole": "warning",
         "holes_co_located": "warning",
@@ -102,7 +183,7 @@
         "malformed_courtyard": "error",
         "microvia_drill_out_of_range": "error",
         "mirrored_text_on_front_layer": "warning",
-        "missing_courtyard": "ignore",
+        "missing_courtyard": "warning",
         "missing_footprint": "warning",
         "net_conflict": "warning",
         "nonmirrored_text_on_back_layer": "warning",
@@ -507,7 +588,7 @@
         "microvia_drill": 0.1,
         "name": "60V",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 1,
+        "priority": 2,
         "schematic_color": "rgba(0, 0, 0, 0.000)",
         "track_width": 0.5,
         "via_diameter": 0.6,
@@ -517,11 +598,21 @@
         "clearance": 0.15,
         "name": "INA238",
         "pcb_color": "rgba(0, 0, 0, 0.000)",
-        "priority": 0,
+        "priority": 1,
         "schematic_color": "rgba(0, 0, 0, 0.000)",
         "track_width": 0.15,
         "via_diameter": 0.6,
         "via_drill": 0.3
+      },
+      {
+        "clearance": 0.5,
+        "diff_pair_gap": 0.15,
+        "diff_pair_width": 0.5,
+        "name": "USB",
+        "pcb_color": "rgba(0, 0, 0, 0.000)",
+        "priority": 0,
+        "schematic_color": "rgba(0, 0, 0, 0.000)",
+        "track_width": 0.5
       }
     ],
     "meta": {
@@ -545,6 +636,14 @@
       {
         "netclass": "60V",
         "pattern": "VSHUNT*"
+      },
+      {
+        "netclass": "USB",
+        "pattern": "DD*"
+      },
+      {
+        "netclass": "60V",
+        "pattern": "+BATT"
       }
     ]
   },
